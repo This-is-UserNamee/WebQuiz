@@ -7,91 +7,188 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
-// rooms: Map<roomId, { creator: socket.id, members: Set<socket.id>, questionOrder: number[], current: number }>
+// rooms: Map<roomId, { creator, members, order, current, locked, scores, started, buzzed, responder }>
 const rooms = new Map();
 
 // サンプル問題集
 const questions = [
   { question: '日本の首都はどこですか？', options: ['東京', '大阪', '京都', '名古屋'], answer: '東京' },
   { question: '化学式 H2O は何の物質ですか？', options: ['水', '酸素', '二酸化炭素', 'エタン'], answer: '水' },
-  // 他の問題を追加
 ];
 
-function shuffle(arr) {
-  return arr.sort(() => Math.random() - 0.5);
-}
+function shuffle(arr) { return arr.sort(() => Math.random() - 0.5); }
 
-io.on('connection', (socket) => {
-  console.log(`Socket connected: ${socket.id}`);
-
+io.on('connection', socket => {
   // ルーム作成
   socket.on('createRoom', () => {
     const roomId = uuidv4();
     const order = shuffle(questions.map((_, idx) => idx));
-    rooms.set(roomId, { creator: socket.id, members: new Set([socket.id]), questionOrder: order, current: 0 });
+    const members = new Set([socket.id]);
+    const scores = new Map([[socket.id, 0]]);
+    rooms.set(roomId, {
+      creator: socket.id,
+      members,
+      order,
+      current: 0,
+      locked: new Set(), // 不正解者を追跡
+      scores,
+      started: false,
+      buzzed: false,
+      responder: null
+    });
     socket.join(roomId);
-    socket.emit('roomCreated', { roomId, creator: socket.id });
+    socket.emit('roomCreated', roomId);
     io.emit('roomsList', Array.from(rooms.keys()));
   });
 
-  // ルーム一覧取得
   socket.on('getRooms', () => socket.emit('roomsList', Array.from(rooms.keys())));
 
-  // ルーム削除
-  socket.on('deleteRoom', (roomId) => {
+  socket.on('deleteRoom', roomId => {
     const room = rooms.get(roomId);
-    if (room && room.creator === socket.id) {
+    if (room?.creator === socket.id) {
       rooms.delete(roomId);
       io.emit('roomsList', Array.from(rooms.keys()));
       io.to(roomId).emit('roomDeleted', roomId);
-    } else {
-      socket.emit('errorMessage', 'ルーム作成者のみルームを削除できます。');
     }
   });
 
-  // ルーム参加
-  socket.on('joinRoom', (roomId) => {
+  socket.on('joinRoom', roomId => {
     const room = rooms.get(roomId);
-    if (!room) return socket.emit('errorMessage', `Room ${roomId} does not exist.`);
+    if (!room) return socket.emit('errorMessage', 'ルームが存在しません');
+    if (room.started) return socket.emit('errorMessage', 'クイズは既に開始されています');
     room.members.add(socket.id);
+    room.scores.set(socket.id, 0);
     socket.join(roomId);
-    socket.emit('joinedRoom', { roomId, creator: room.creator });
-    io.to(roomId).emit('userJoined', { roomId, userId: socket.id });
+    socket.emit('joinedRoom', roomId);
+    io.to(roomId).emit('userJoined', Array.from(room.members));
   });
 
-  // クイズ開始（ルーム作成者のみ）
-  socket.on('beginQuiz', (roomId) => {
+  socket.on('beginQuiz', roomId => {
     const room = rooms.get(roomId);
-    if (!room) return socket.emit('errorMessage', `Room ${roomId} does not exist.`);
-    if (room.creator !== socket.id) return socket.emit('errorMessage', 'クイズを開始できるのはルーム作成者のみです。');
-    const qIndex = room.questionOrder[room.current];
-    io.to(roomId).emit('startQuiz', { index: room.current, total: room.questionOrder.length, ...questions[qIndex] });
+    if (!room || room.creator !== socket.id) return;
+    room.started = true;
+    room.buzzed = false;
+    room.responder = null;
+    room.locked.clear();
+    const idx = room.order[room.current];
+    io.to(roomId).emit('startQuiz', { index: room.current, total: room.order.length, ...questions[idx] });
   });
 
-  // 解答受付
+  // 早押し
+  socket.on('buzz', roomId => {
+    const room = rooms.get(roomId);
+    // 一度不正解になった人はロックされるため再押し不可
+    if (!room || room.locked.has(socket.id) || room.buzzed) return;
+    room.buzzed = true;
+    room.responder = socket.id;
+    io.to(roomId).emit('buzzed', socket.id);
+  });
+
+  // 解答後の再開 or 次の問題判定
+  socket.on('requestResume', roomId => {
+    const room = rooms.get(roomId);
+    if (!room || socket.id !== room.responder) return;
+
+    room.locked.add(socket.id);
+    room.buzzed = false;
+    room.responder = null;
+
+    if (room.locked.size >= room.members.size) {
+      room.current++;
+      room.locked.clear();
+      if (room.current < room.order.length) {
+        const nextIdx = room.order[room.current];
+        io.to(roomId).emit('startQuiz', { index: room.current, total: room.order.length, ...questions[nextIdx] });
+      } else {
+        const ranking = Array.from(room.scores.entries())
+          .map(([userId, score]) => ({ userId, score }))
+          .sort((a, b) => b.score - a.score);
+        io.to(roomId).emit('quizEnded', ranking);
+        rooms.delete(roomId);
+        io.emit('roomsList', Array.from(rooms.keys()));
+      }
+    } else {
+      io.to(roomId).emit('resumeTypewriter');
+    }
+  });
+
   socket.on('submitAnswer', ({ roomId, answer }) => {
     const room = rooms.get(roomId);
-    if (!room) return;
-    const qIndex = room.questionOrder[room.current];
-    const correct = questions[qIndex].answer === answer;
-    io.to(roomId).emit('answerResult', { userId: socket.id, answer, correct });
-    room.current++;
-    if (room.current < room.questionOrder.length) {
-      const nextIndex = room.questionOrder[room.current];
-      io.to(roomId).emit('startQuiz', { index: room.current, total: room.questionOrder.length, ...questions[nextIndex] });
+    if (!room || socket.id !== room.responder) return;
+    const idx = room.order[room.current];
+    const correct = questions[idx].answer === answer;
+    io.to(roomId).emit('answerResult', { userId: socket.id, correct });
+
+    if (correct) {
+      room.scores.set(socket.id, (room.scores.get(socket.id) || 0) + 1);
+      room.current++;
+      room.locked.clear();
+      room.buzzed = false;
+      room.responder = null;
+
+      if (room.current < room.order.length) {
+        const nextIdx = room.order[room.current];
+        io.to(roomId).emit('startQuiz', { index: room.current, total: room.order.length, ...questions[nextIdx] });
+      } else {
+        const ranking = Array.from(room.scores.entries())
+          .map(([userId, score]) => ({ userId, score }))
+          .sort((a, b) => b.score - a.score);
+        io.to(roomId).emit('quizEnded', ranking);
+        rooms.delete(roomId);
+        io.emit('roomsList', Array.from(rooms.keys()));
+      }
     } else {
-      io.to(roomId).emit('quizEnded');
-      rooms.delete(roomId);
-      io.emit('roomsList', Array.from(rooms.keys()));
+      room.locked.add(socket.id);
+      room.buzzed = false;
+      room.responder = null;
+
+      if (room.locked.size >= room.members.size) {
+        room.current++;
+        room.locked.clear();
+        if (room.current < room.order.length) {
+          const nextIdx = room.order[room.current];
+          io.to(roomId).emit('startQuiz', { index: room.current, total: room.order.length, ...questions[nextIdx] });
+        } else {
+          const ranking = Array.from(room.scores.entries())
+            .map(([userId, score]) => ({ userId, score }))
+            .sort((a, b) => b.score - a.score);
+          io.to(roomId).emit('quizEnded', ranking);
+          rooms.delete(roomId);
+          io.emit('roomsList', Array.from(rooms.keys()));
+        }
+      } else {
+        io.to(roomId).emit('resumeTypewriter');
+      }
     }
   });
 
-  // 切断時処理
   socket.on('disconnect', () => {
     rooms.forEach((room, roomId) => {
-      if (room.members.has(socket.id)) {
-        room.members.delete(socket.id);
-        io.to(roomId).emit('userLeft', { roomId, userId: socket.id });
+      if (room.members.delete(socket.id)) {
+        room.scores.delete(socket.id);
+        room.locked.delete(socket.id);
+        if (room.responder === socket.id) {
+          room.buzzed = false;
+          room.responder = null;
+          if (room.locked.size >= room.members.size) {
+            room.current++;
+            room.locked.clear();
+            if (room.current < room.order.length) {
+              const nextIdx = room.order[room.current];
+              io.to(roomId).emit('startQuiz', { index: room.current, total: room.order.length, ...questions[nextIdx] });
+            } else {
+              const ranking = Array.from(room.scores.entries())
+                .map(([userId, score]) => ({ userId, score }))
+                .sort((a, b) => b.score - a.score);
+              io.to(roomId).emit('quizEnded', ranking);
+              rooms.delete(roomId);
+              io.emit('roomsList', Array.from(rooms.keys()));
+            }
+          } else {
+            io.to(roomId).emit('resumeTypewriter');
+          }
+        }
+        io.to(roomId).emit('userLeft', Array.from(room.members));
         if (room.creator === socket.id) {
           rooms.delete(roomId);
           io.emit('roomsList', Array.from(rooms.keys()));
@@ -101,5 +198,4 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 5001;
-server.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+server.listen(process.env.PORT || 5001);

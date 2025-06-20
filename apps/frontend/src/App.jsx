@@ -1,54 +1,57 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
-// Socket.IOクライアントの初期化
 const socket = io('http://localhost:5001');
 
+// ひらがなを生成するヘルパー関数
+const generateRandomHiragana = (count, correctChar) => {
+  const start = 0x3042;
+  const end = 0x3093;
+  const all = [];
+  for (let i = start; i <= end; i++) {
+    const c = String.fromCharCode(i);
+    if (!['ゔ', 'ゐ', 'ゑ'].includes(c)) all.push(c);
+  }
+  const avail = all.filter(c => c !== correctChar);
+  for (let i = avail.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [avail[i], avail[j]] = [avail[j], avail[i]];
+  }
+  const wrong = avail.slice(0, count - 1);
+  const choices = [...wrong, correctChar];
+  for (let i = choices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [choices[i], choices[j]] = [choices[j], choices[i]];
+  }
+  return choices;
+};
+
 export default function RoomManager() {
-  // --- State管理 ---
-  const [rooms, setRooms] = useState([]);               // 利用可能なルームID一覧
-  const [joined, setJoined] = useState(null);           // 現在参加中のルームID
-  const [creator, setCreator] = useState(null);         // ルーム作成者のソケットID
-  const [quiz, setQuiz] = useState(null);               // 現在の問題データ
-  const [displayedQuestion, setDisplayedQuestion] = useState(''); // タイプライターで表示中の文字列
-  const [message, setMessage] = useState('');           // UIに表示するメッセージ
-  const [gameEnded, setGameEnded] = useState(false);    // ゲーム終了フラグ
-  const [scores, setScores] = useState({});             // 各ユーザーのスコアマップ
-  const [totalQuestions, setTotalQuestions] = useState(0); // 全問題数
-  const [ranking, setRanking] = useState([]);           // ランキング配列
-  const [hasBuzzed, setHasBuzzed] = useState(false);    // 早押し済みフラグ
-  const [currentResponder, setCurrentResponder] = useState(null); // 現在の回答者ID
-  const [lockedSet, setLockedSet] = useState(new Set()); // 不正解者のID集合
+  const [username, setUsername] = useState('');
+  const [registered, setRegistered] = useState(false);
+  const [rooms, setRooms] = useState([]);
+  const [joined, setJoined] = useState(null);
+  const [creator, setCreator] = useState(null);
+  const [quiz, setQuiz] = useState(null);
+  const [displayedQuestion, setDisplayedQuestion] = useState('');
+  const [message, setMessage] = useState('');
+  const [gameEnded, setGameEnded] = useState(false);
+  const [scores, setScores] = useState({});
+  const [totalQuestions, setTotalQuestions] = useState(0);
+  const [ranking, setRanking] = useState([]);
+  const [hasBuzzed, setHasBuzzed] = useState(false);
+  const [currentResponder, setCurrentResponder] = useState(null);
+  const [lockedSet, setLockedSet] = useState(new Set());
+  const [partial, setPartial] = useState('');
+  const [options, setOptions] = useState([]);
 
-  // --- Ref管理（再レンダー不要な可変値） ---
-  const charIndexRef = useRef(0);      // タイプライターの文字インデックス
-  const questionRef = useRef('');      // 現在の問題文を保持
-  const intervalRef = useRef(null);    // タイプライター用タイマー
+  const [correctInfo, setCorrectInfo] = useState({ show: false, name: '', answer: '' });
 
-  /**
-   * タイプライター表示: 指定位置(startIndex)から1文字ずつ追加表示
-   * @param {number} startIndex - 再開／開始位置
-   */
-  const startTypewriter = startIndex => {
-    clearInterval(intervalRef.current);
-    const question = questionRef.current;
-    charIndexRef.current = startIndex;
-    setDisplayedQuestion(question.slice(0, startIndex));
-    intervalRef.current = setInterval(() => {
-      const idx = charIndexRef.current;
-      if (idx >= question.length) {
-        clearInterval(intervalRef.current);
-        return;
-      }
-      setDisplayedQuestion(prev => prev + question.charAt(idx));
-      charIndexRef.current = idx + 1;
-    }, 100);
-  };
 
-  /**
-   * Socket.IOイベントの登録
-   * マウント時に一度だけ実行
-   */
+  const charIndexRef = useRef(0);
+  const questionRef = useRef('');
+  const intervalRef = useRef(null);
+
   useEffect(() => {
     socket.on('roomsList', setRooms);
     socket.on('errorMessage', setMessage);
@@ -56,57 +59,83 @@ export default function RoomManager() {
     socket.on('roomCreated', id => {
       setJoined(id);
       setCreator(socket.id);
-      resetGameState(); // 新規ルーム作成時に状態初期化
+      resetGameState();
     });
-
     socket.on('joinedRoom', id => {
       setJoined(id);
-      setQuiz(null);
+      resetGameState();
       setMessage('');
     });
+    socket.on('userJoined', names => setMessage(names.join('、') + ' が参加しました'));
 
     socket.on('startQuiz', data => {
+      // 新問開始時に状態リセット
       setQuiz(data);
-      questionRef.current = data.question;  // 問題文をRefに保持
+      setTotalQuestions(data.total);
+      setPartial('');
       setMessage('');
-      setHasBuzzed(false);
       setCurrentResponder(null);
+      setHasBuzzed(false);
       setLockedSet(new Set());
-      if (data.index === 0) {
-        setTotalQuestions(data.total);
-        setScores({});
-      }
-      startTypewriter(0); // 問題開始: 先頭から表示
+
+      questionRef.current = data.question;
+      // タイプライター表示開始
+      startTypewriter(0);
     });
 
-    socket.on('buzzed', userId => {
+    socket.on('pauseTypewriter', () => {
       clearInterval(intervalRef.current);
-      setHasBuzzed(true);
-      setCurrentResponder(userId);
+    });
+
+    socket.on('buzzed', name => {
+      setCurrentResponder(name);
+      setMessage(`${name} が回答中`);
+      setHasBuzzed(name === username);
+    });
+
+    socket.on('charChosen', ({ name, char }) => {
+      //setMessage(`${name} が「${char}」を選択`);
+    });
+
+    socket.on('partialFeedback_every', ({ partial }) => {
+      setMessage(`${partial}`);
+    });
+
+    socket.on('partialFeedback', ({ partial }) => {
+      setPartial(partial);
+      setMessage(`${partial}`);
+    });
+
+    socket.on('answerResult', ({ name, correct }) => {
+      // スコア更新
+      setScores(prev => ({ ...prev, [name]: (prev[name] || 0) + (correct ? 1 : 0) }));
+
+      if (name === username) {
+        if (correct) {
+          setCorrectInfo({ show: true, name, answer: quiz.answer });
+          clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+          setCorrectInfo({ show: false, name: '', answer: '' });
+          socket.emit('nextQuestion', joined);
+        }, 3000);
+          setMessage('完全正解！');
+          // 次の問題では再度早押し可能に
+          setHasBuzzed(false);
+        } else {
+          setMessage('不正解でした');
+          setLockedSet(prev => new Set(prev).add(username));
+          // 不正解時のみタイプライター再開を要求
+          socket.emit('requestResume', joined);
+        }
+      }
     });
 
     socket.on('resumeTypewriter', () => {
       setHasBuzzed(false);
       setCurrentResponder(null);
       setMessage('');
-      startTypewriter(charIndexRef.current); // 停止位置から再開
-    });
-
-    socket.on('answerResult', ({ userId, correct }) => {
-      // スコア更新
-      setScores(prev => ({
-        ...prev,
-        [userId]: (prev[userId] || 0) + (correct ? 1 : 0)
-      }));
-      if (userId === socket.id) {
-        if (!correct) {
-          setLockedSet(prev => new Set(prev).add(socket.id));
-          setMessage('不正解！再開します');
-          socket.emit('requestResume', joined);
-        } else {
-          setMessage('正解！次の問題へ');
-        }
-      }
+      setPartial('');
+      startTypewriter(charIndexRef.current);
     });
 
     socket.on('quizEnded', data => {
@@ -116,33 +145,45 @@ export default function RoomManager() {
     });
 
     socket.emit('getRooms');
+    return () => socket.removeAllListeners();
+  }, [username]);
 
-    return () => {
-      socket.removeAllListeners();
-      clearInterval(intervalRef.current);
-    };
-  }, []);
+  useEffect(() => {
+    if (!quiz) return;
+    const idx = partial.length;
+    const correctChar = quiz.answer[idx];
+    setOptions(generateRandomHiragana(4, correctChar));
+  }, [quiz, partial]);
 
-  // --- UI操作用関数 ---
+  const handleChar = c => {
+    socket.emit('submitChar', { roomId: joined, char: c });
+  };
+
+  const startTypewriter = startIndex => {
+    clearInterval(intervalRef.current);
+    const text = questionRef.current;
+    charIndexRef.current = startIndex;
+    setDisplayedQuestion(text.slice(0, startIndex));
+    intervalRef.current = setInterval(() => {
+      const idx = charIndexRef.current;
+      if (idx >= text.length) return clearInterval(intervalRef.current);
+      setDisplayedQuestion(prev => prev + text.charAt(idx));
+      charIndexRef.current = idx + 1;
+    }, 100);
+  };
+
+  const register = () => {
+    if (!username.trim()) return;
+    socket.emit('setName', username.trim());
+    setRegistered(true);
+    socket.emit('getRooms');
+  };
   const create = () => socket.emit('createRoom');
-  const joinRoom = id => socket.emit('joinRoom', id);
+  const joinRoom = id => socket.emit('joinRoom', { roomId: id });
   const start = () => socket.emit('beginQuiz', joined);
   const buzz = () => socket.emit('buzz', joined);
-  const answer = opt => {
-    if (hasBuzzed && currentResponder === socket.id) {
-      socket.emit('submitAnswer', { roomId: joined, answer: opt });
-    }
-  };
-
-  /**
-   * ゲーム状態をリセット
-   */
-  const reset = () => {
-    socket.emit('getRooms');
-    setJoined(null);
-    resetGameState();
-    setCreator(null);
-  };
+  const answer = opt => { if (hasBuzzed && currentResponder === username) handleChar(opt); };
+  const reset = () => { socket.emit('getRooms'); setJoined(null); setCreator(null); resetGameState(); };
 
   function resetGameState() {
     setQuiz(null);
@@ -151,46 +192,37 @@ export default function RoomManager() {
     setScores({});
     setTotalQuestions(0);
     setRanking([]);
-    clearInterval(intervalRef.current);
-    setDisplayedQuestion('');
     setHasBuzzed(false);
     setCurrentResponder(null);
     setLockedSet(new Set());
-    charIndexRef.current = 0;
-    questionRef.current = '';
+    setDisplayedQuestion('');
+    setPartial('');
+    setOptions([]);
+    clearInterval(intervalRef.current);
   }
 
-  /**
-   * 結果ソート: ランキングがあれば優先、それ以外はスコア順にソート
-   */
-  const sortedResults = ranking.length
-    ? ranking
-    : Object.entries(scores)
-        .map(([u, s]) => ({ userId: u, score: s }))
-        .sort((a, b) => b.score - a.score);
+  // 描画
+  if (!registered) {
+    return (
+      <div>
+        <input value={username} onChange={e => setUsername(e.target.value)} placeholder="ユーザー名を入力" />
+        <button onClick={register}>登録</button>
+      </div>
+    );
+  }
 
-  // --- 描画 ---
   return (
     <div>
-      {/* ロビー画面 */}
       {!joined && !gameEnded && (
         <div>
           <button onClick={create}>ルーム作成</button>
-          <ul>
-            {rooms.map(r => (
-              <li key={r}>
-                {r}{' '}
-                <button onClick={() => joinRoom(r)} disabled={message !== ''}>
-                  {message ? '参加不可' : '参加'}
-                </button>
-              </li>
-            ))}
-          </ul>
+          <ul>{rooms.map(r => (
+            <li key={r}>{r} <button onClick={() => joinRoom(r)}>参加</button></li>
+          ))}</ul>
           {message && <p>{message}</p>}
         </div>
       )}
 
-      {/* 開始前画面 */}
       {joined && !quiz && !gameEnded && (
         <div>
           <p>ルーム: {joined}</p>
@@ -198,33 +230,39 @@ export default function RoomManager() {
         </div>
       )}
 
-      {/* クイズ進行中画面 */}
       {quiz && !gameEnded && (
         <div>
-          <p>{quiz.index + 1}/{totalQuestions} 問目: {displayedQuestion}</p>
-          <button onClick={buzz} disabled={hasBuzzed || lockedSet.has(socket.id)}>
-            {lockedSet.has(socket.id)
+          <p>{quiz.index + 1}/{totalQuestions}問目: {displayedQuestion}</p>
+          <button
+            onClick={buzz}
+            disabled={hasBuzzed || lockedSet.has(username) || (currentResponder && currentResponder !== username)}
+          >
+            {lockedSet.has(username)
               ? '解答不可'
               : hasBuzzed
-              ? '待機中…'
-              : '早押し'}
+                ? '待機中…'
+                : currentResponder
+                  ? '他の人が回答中…'
+                  : '早押し'}
           </button>
-          {hasBuzzed && currentResponder === socket.id && (
-            <div>
-              {quiz.options.map(opt => (
-                <button key={opt} onClick={() => answer(opt)}>{opt}</button>
-              ))}
-            </div>
+          {hasBuzzed && currentResponder === username && (
+            <div>{options.map(opt => (
+              <button key={opt} onClick={() => answer(opt)}>{opt}</button>
+            ))}</div>
           )}
           {message && <p>{message}</p>}
+          {correctInfo.show && (
+            <div className="overlay">
+              <p>{correctInfo.name} が正解！答え: {correctInfo.answer}</p>
+            </div>
+          )}
         </div>
       )}
 
-      {/* 終了画面 */}
       {gameEnded && (
         <div>
           <h3>リザルト</h3>
-          <ol>{sortedResults.map(p => <li key={p.userId}>{p.userId}: {p.score} 点</li>)}</ol>
+          <ol>{ranking.map(p => <li key={p.name}>{p.name}: {p.score}点</li>)}</ol>
           <button onClick={reset}>トップに戻る</button>
         </div>
       )}

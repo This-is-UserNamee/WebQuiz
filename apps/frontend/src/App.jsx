@@ -44,13 +44,12 @@ export default function RoomManager() {
   const [lockedSet, setLockedSet] = useState(new Set());
   const [partial, setPartial] = useState('');
   const [options, setOptions] = useState([]);
-
   const [correctInfo, setCorrectInfo] = useState({ show: false, name: '', answer: '' });
-
 
   const charIndexRef = useRef(0);
   const questionRef = useRef('');
   const intervalRef = useRef(null);
+  const nextTimeoutRef = useRef(null);
 
   useEffect(() => {
     socket.on('roomsList', setRooms);
@@ -68,8 +67,14 @@ export default function RoomManager() {
     });
     socket.on('userJoined', names => setMessage(names.join('、') + ' が参加しました'));
 
+    socket.on('showBanner', ({ message: banner }) => {
+      clearInterval(intervalRef.current);
+      clearTimeout(nextTimeoutRef.current);
+      setDisplayedQuestion('');
+      setMessage(banner);
+    });
+
     socket.on('startQuiz', data => {
-      // 新問開始時に状態リセット
       setQuiz(data);
       setTotalQuestions(data.total);
       setPartial('');
@@ -77,15 +82,13 @@ export default function RoomManager() {
       setCurrentResponder(null);
       setHasBuzzed(false);
       setLockedSet(new Set());
+      setCorrectInfo({ show: false, name: '', answer: '' });
 
       questionRef.current = data.question;
-      // タイプライター表示開始
       startTypewriter(0);
     });
 
-    socket.on('pauseTypewriter', () => {
-      clearInterval(intervalRef.current);
-    });
+    socket.on('pauseTypewriter', () => clearInterval(intervalRef.current));
 
     socket.on('buzzed', name => {
       setCurrentResponder(name);
@@ -93,40 +96,26 @@ export default function RoomManager() {
       setHasBuzzed(name === username);
     });
 
-    socket.on('charChosen', ({ name, char }) => {
-      //setMessage(`${name} が「${char}」を選択`);
-    });
-
-    socket.on('partialFeedback_every', ({ partial }) => {
-      setMessage(`${partial}`);
-    });
-
     socket.on('partialFeedback', ({ partial }) => {
       setPartial(partial);
-      setMessage(`${partial}`);
+      setMessage(partial);
     });
 
-    socket.on('answerResult', ({ name, correct }) => {
-      // スコア更新
+    socket.on('answerResult', ({ name, correct, answer }) => {
       setScores(prev => ({ ...prev, [name]: (prev[name] || 0) + (correct ? 1 : 0) }));
-
-      if (name === username) {
-        if (correct) {
-          setCorrectInfo({ show: true, name, answer: quiz.answer });
-          clearTimeout(timeoutRef.current);
-        timeoutRef.current = setTimeout(() => {
+      if (correct) {
+        setMessage('');
+        setDisplayedQuestion('');
+        setCorrectInfo({ show: true, name, answer });
+        clearTimeout(nextTimeoutRef.current);
+        nextTimeoutRef.current = setTimeout(() => {
           setCorrectInfo({ show: false, name: '', answer: '' });
           socket.emit('nextQuestion', joined);
         }, 3000);
-          setMessage('完全正解！');
-          // 次の問題では再度早押し可能に
-          setHasBuzzed(false);
-        } else {
-          setMessage('不正解でした');
-          setLockedSet(prev => new Set(prev).add(username));
-          // 不正解時のみタイプライター再開を要求
-          socket.emit('requestResume', joined);
-        }
+      } else if (name === username) {
+        setMessage('不正解でした');
+        setLockedSet(prev => new Set(prev).add(username));
+        socket.emit('requestResume', joined);
       }
     });
 
@@ -155,10 +144,6 @@ export default function RoomManager() {
     setOptions(generateRandomHiragana(4, correctChar));
   }, [quiz, partial]);
 
-  const handleChar = c => {
-    socket.emit('submitChar', { roomId: joined, char: c });
-  };
-
   const startTypewriter = startIndex => {
     clearInterval(intervalRef.current);
     const text = questionRef.current;
@@ -178,12 +163,19 @@ export default function RoomManager() {
     setRegistered(true);
     socket.emit('getRooms');
   };
-  const create = () => socket.emit('createRoom');
+  const createRoom = () => socket.emit('createRoom');
   const joinRoom = id => socket.emit('joinRoom', { roomId: id });
   const start = () => socket.emit('beginQuiz', joined);
   const buzz = () => socket.emit('buzz', joined);
-  const answer = opt => { if (hasBuzzed && currentResponder === username) handleChar(opt); };
-  const reset = () => { socket.emit('getRooms'); setJoined(null); setCreator(null); resetGameState(); };
+  const answer = opt => {
+    if (hasBuzzed && currentResponder === username) socket.emit('submitChar', { roomId: joined, char: opt });
+  };
+  const reset = () => {
+    socket.emit('getRooms');
+    setJoined(null);
+    setCreator(null);
+    resetGameState();
+  };
 
   function resetGameState() {
     setQuiz(null);
@@ -198,72 +190,86 @@ export default function RoomManager() {
     setDisplayedQuestion('');
     setPartial('');
     setOptions([]);
+    setCorrectInfo({ show: false, name: '', answer: '' });
     clearInterval(intervalRef.current);
   }
 
-  // 描画
-  if (!registered) {
+  // バナー表示中
+  if (message === '問題！') {
     return (
-      <div>
-        <input value={username} onChange={e => setUsername(e.target.value)} placeholder="ユーザー名を入力" />
-        <button onClick={register}>登録</button>
+      <div className="banner">
+        <h1>問題！</h1>
+      </div>
+    );
+  }
+  // 正解オーバーレイ
+  if (correctInfo.show) {
+    return (
+      <div className="overlay">
+        <p>{correctInfo.name} が正解！答え: {correctInfo.answer}</p>
       </div>
     );
   }
 
+  // 登録画面
+  if (!registered) return (
+    <div>
+      <input value={username} onChange={e => setUsername(e.target.value)} placeholder="ユーザー名を入力" />
+      <button onClick={register}>登録</button>
+    </div>
+  );
+
+  // リザルト画面
+  if (gameEnded) return (
+    <div>
+      <h3>リザルト</h3>
+      <ol>{ranking.map(p => <li key={p.name}>{p.name}: {p.score}点</li>)}</ol>
+      <button onClick={reset}>トップに戻る</button>
+    </div>
+  );
+
+  // クイズ画面
   return (
     <div>
-      {!joined && !gameEnded && (
+      {!joined ? (
         <div>
-          <button onClick={create}>ルーム作成</button>
+          <button onClick={createRoom}>ルーム作成</button>
           <ul>{rooms.map(r => (
             <li key={r}>{r} <button onClick={() => joinRoom(r)}>参加</button></li>
           ))}</ul>
           {message && <p>{message}</p>}
         </div>
-      )}
-
-      {joined && !quiz && !gameEnded && (
+      ) : (
         <div>
-          <p>ルーム: {joined}</p>
-          {creator === socket.id && <button onClick={start}>開始</button>}
-        </div>
-      )}
-
-      {quiz && !gameEnded && (
-        <div>
-          <p>{quiz.index + 1}/{totalQuestions}問目: {displayedQuestion}</p>
-          <button
-            onClick={buzz}
-            disabled={hasBuzzed || lockedSet.has(username) || (currentResponder && currentResponder !== username)}
-          >
-            {lockedSet.has(username)
-              ? '解答不可'
-              : hasBuzzed
-                ? '待機中…'
-                : currentResponder
-                  ? '他の人が回答中…'
-                  : '早押し'}
-          </button>
-          {hasBuzzed && currentResponder === username && (
-            <div>{options.map(opt => (
-              <button key={opt} onClick={() => answer(opt)}>{opt}</button>
-            ))}</div>
-          )}
-          {message && <p>{message}</p>}
-          {correctInfo.show && (
-            <div className="overlay">
-              <p>{correctInfo.name} が正解！答え: {correctInfo.answer}</p>
+          {!quiz ? (
+            <div>
+              <p>ルーム: {joined}</p>
+              {creator === socket.id && <button onClick={start}>開始</button>}
+            </div>
+          ) : (
+            <div>
+              <p>{quiz.index + 1}/{totalQuestions}問目: {displayedQuestion}</p>
+              {/* 自身が回答中はボタンを非表示 */}
+              {!(hasBuzzed && currentResponder === username) && (
+                <button
+                  onClick={buzz}
+                  disabled={lockedSet.has(username) || (currentResponder && currentResponder !== username)}
+                >
+                  {lockedSet.has(username)
+                    ? '解答不可'
+                    : currentResponder
+                      ? '他の人が回答中…'
+                      : '早押し'}
+                </button>
+              )}
+              {hasBuzzed && currentResponder === username && (
+                <div>{options.map(opt => (
+                  <button key={opt} onClick={() => answer(opt)}>{opt}</button>
+                ))}</div>
+              )}
+              {message && <p>{message}</p>}
             </div>
           )}
-        </div>
-      )}
-
-      {gameEnded && (
-        <div>
-          <h3>リザルト</h3>
-          <ol>{ranking.map(p => <li key={p.name}>{p.name}: {p.score}点</li>)}</ol>
-          <button onClick={reset}>トップに戻る</button>
         </div>
       )}
     </div>

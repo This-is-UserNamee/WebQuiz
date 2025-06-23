@@ -22,22 +22,32 @@ try {
 // rooms: Map<roomId, { creator, members, order, current, locked, scores, started, buzzed, responder, partial }>
 const rooms = new Map();
 
-// サンプル問題集（答えはひらがな）
-// const questions = [
-//   { question: '日本の首都はどこですか？', answer: 'とうきょう' },
-//   { question: '化学式 H2O は何の物質ですか？', answer: 'みず' },
-// ];
-
 function shuffle(arr) { return arr.sort(() => Math.random() - 0.5); }
 
+// Helper to send the "問題！" banner before each question
+function sendQuestion(roomId) {
+  const room = rooms.get(roomId);
+  if (!room) return;
+  const idx = room.order[room.current];
+  // Emit banner event
+  io.to(roomId).emit('showBanner', { message: '問題！' });
+  // After 2 seconds, send the actual question
+  setTimeout(() => {
+    io.to(roomId).emit('startQuiz', {
+      index: room.current,
+      total: room.order.length,
+      question: questions[idx].question,
+      answer: questions[idx].answer
+    });
+  }, 2000);
+}
+
 io.on('connection', socket => {
-  // ユーザー名設定
   socket.on('setName', name => {
     socket.data.username = name;
     console.log(`${name} is connected`);
   });
 
-  // ルーム作成
   socket.on('createRoom', () => {
     const username = socket.data.username || 'Anonymous';
     const roomId = uuidv4();
@@ -65,12 +75,10 @@ io.on('connection', socket => {
     console.log(`${roomId} was created by ${username}`);
   });
 
-  // ルーム一覧取得
   socket.on('getRooms', () => {
     socket.emit('roomsList', Array.from(rooms.keys()));
   });
 
-  // ルーム参加
   socket.on('joinRoom', ({ roomId }) => {
     const room = rooms.get(roomId);
     if (!room) return socket.emit('errorMessage', 'ルームが存在しません');
@@ -86,7 +94,6 @@ io.on('connection', socket => {
     console.log(`${username} joined ${roomId}`);
   });
 
-  // クイズ開始
   socket.on('beginQuiz', roomId => {
     const room = rooms.get(roomId);
     if (!room || room.creator !== socket.id) return;
@@ -97,16 +104,10 @@ io.on('connection', socket => {
     room.locked.clear();
     room.partial = {};
 
-    const idx = room.order[room.current];
-    io.to(roomId).emit('startQuiz', {
-      index: room.current,
-      total: room.order.length,
-      question: questions[idx].question,
-      answer: questions[idx].answer
-    });
+    // Send banner then question
+    sendQuestion(roomId);
   });
 
-  // ブザー
   socket.on('buzz', roomId => {
     const room = rooms.get(roomId);
     if (!room || !room.started || room.locked.has(socket.id) || room.buzzed) return;
@@ -114,12 +115,10 @@ io.on('connection', socket => {
     room.buzzed = true;
     room.responder = socket.id;
     const name = room.members.get(socket.id);
-    // タイプライター表示を一時停止
     io.to(roomId).emit('pauseTypewriter');
     io.to(roomId).emit('buzzed', name);
   });
 
-  // 文字選択
   socket.on('submitChar', ({ roomId, char }) => {
     const room = rooms.get(roomId);
     if (!room || socket.id !== room.responder) return;
@@ -134,32 +133,31 @@ io.on('connection', socket => {
 
     if (correctAnswer.startsWith(partial)) {
       if (partial === correctAnswer) {
+        // 正解時：全員に正解者と答えを通知
         socket.emit('answerFeedback', { correct: true });
-        io.to(roomId).emit('answerResult', { name, correct: true });
+        io.to(roomId).emit('answerResult', { name, correct: true, answer: correctAnswer });
         room.scores.set(socket.id, (room.scores.get(socket.id) || 0) + 1);
-        // 次の問題へ
-        room.current++;
-        room.locked.clear();
-        room.buzzed = false;
-        room.responder = null;
-        room.partial = {};  // 解答途中文字列をクリア
-        if (room.current < room.order.length) {
-          const nextIdx = room.order[room.current];
-          io.to(roomId).emit('startQuiz', {
-            index: room.current,
-            total: room.order.length,
-            question: questions[nextIdx].question,
-            answer: questions[nextIdx].answer
-          });
-        } else {
-          // 終了処理
-          const ranking = Array.from(room.scores.entries())
-            .map(([id, score]) => ({ name: room.members.get(id), score }))
-            .sort((a, b) => b.score - a.score);
-          io.to(roomId).emit('quizEnded', ranking);
-          rooms.delete(roomId);
-          io.emit('roomsList', Array.from(rooms.keys()));
-        }
+
+        // 次の問題へ（3秒後にバナー＆問題）
+        setTimeout(() => {
+          room.current++;
+          room.locked.clear();
+          room.buzzed = false;
+          room.responder = null;
+          room.partial = {};
+
+          if (room.current < room.order.length) {
+            sendQuestion(roomId);
+          } else {
+            // クイズ終了
+            const ranking = Array.from(room.scores.entries())
+              .map(([id, score]) => ({ name: room.members.get(id), score }))
+              .sort((a, b) => b.score - a.score);
+            io.to(roomId).emit('quizEnded', ranking);
+            rooms.delete(roomId);
+            io.emit('roomsList', Array.from(rooms.keys()));
+          }
+        }, 3000);
       } else {
         socket.emit('partialFeedback', { partial });
         io.to(roomId).emit('partialFeedback', { partial });
@@ -171,19 +169,13 @@ io.on('connection', socket => {
       room.locked.add(socket.id);
       room.buzzed = false;
       room.responder = null;
+
       if (room.locked.size >= room.members.size) {
-        // 全員不正解で次の問題
         room.current++;
         room.locked.clear();
-        room.partial = {};  // 解答途中文字列をクリア
+        room.partial = {};
         if (room.current < room.order.length) {
-          const nextIdx = room.order[room.current];
-          io.to(roomId).emit('startQuiz', {
-            index: room.current,
-            total: room.order.length,
-            question: questions[nextIdx].question,
-            answer: questions[nextIdx].answer
-          });
+          sendQuestion(roomId);
         } else {
           const ranking = Array.from(room.scores.entries())
             .map(([id, score]) => ({ name: room.members.get(id), score }))
@@ -198,9 +190,6 @@ io.on('connection', socket => {
     }
   });
 
-  
-
-  // 切断
   socket.on('disconnect', () => {
     rooms.forEach((room, roomId) => {
       if (room.members.delete(socket.id)) {

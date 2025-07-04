@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useReducer, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
+import { SOCKET_EVENTS } from './constants/constants';
+import { gameReducer, initialGameState } from './reducers/gameReducer';
 
 const socket = io('http://localhost:5001');
 
@@ -27,172 +29,167 @@ const generateRandomHiragana = (count, correctChar) => {
 };
 
 export default function RoomManager() {
-  const [username, setUsername] = useState('');
-  const [registered, setRegistered] = useState(false);
-  const [rooms, setRooms] = useState([]);
-  const [joined, setJoined] = useState(null);
-  const [creator, setCreator] = useState(null);
-  const [quiz, setQuiz] = useState(null);
-  const [displayedQuestion, setDisplayedQuestion] = useState('');
-  const [message, setMessage] = useState('');
-  const [gameEnded, setGameEnded] = useState(false);
-  const [scores, setScores] = useState({});
-  const [totalQuestions, setTotalQuestions] = useState(0);
-  const [ranking, setRanking] = useState([]);
-  const [hasBuzzed, setHasBuzzed] = useState(false);
-  const [currentResponder, setCurrentResponder] = useState(null);
-  const [lockedSet, setLockedSet] = useState(new Set());
-  const [partial, setPartial] = useState('');
-  const [options, setOptions] = useState([]);
-  const [correctInfo, setCorrectInfo] = useState({ show: false, name: '', answer: '' });
+  const [state, dispatch] = useReducer(gameReducer, initialGameState);
+  const {
+    username,
+    registered,
+    rooms,
+    joined,
+    creator,
+    quiz,
+    displayedQuestion,
+    message,
+    gameEnded,
+    scores,
+    totalQuestions,
+    ranking,
+    hasBuzzed,
+    currentResponder,
+    lockedSet,
+    partial,
+    options,
+    correctInfo,
+  } = state;
 
   const charIndexRef = useRef(0);
   const questionRef = useRef('');
   const intervalRef = useRef(null);
   const nextTimeoutRef = useRef(null);
 
+  // Socket.IOイベントリスナーの設定
   useEffect(() => {
-    socket.on('roomsList', setRooms);
-    socket.on('errorMessage', setMessage);
-
-    socket.on('roomCreated', id => {
-      setJoined(id);
-      setCreator(socket.id);
-      resetGameState();
+    // ルーム一覧の取得
+    socket.on(SOCKET_EVENTS.ROOMS_LIST, (rooms) => {
+      dispatch({ type: SOCKET_EVENTS.ROOMS_LIST, payload: rooms });
     });
-    socket.on('joinedRoom', id => {
-      setJoined(id);
-      resetGameState();
-      setMessage('');
+    
+    // エラーメッセージの受信
+    socket.on(SOCKET_EVENTS.ERROR_MESSAGE, (message) => {
+      dispatch({ type: SOCKET_EVENTS.ERROR_MESSAGE, payload: message });
     });
-    socket.on('userJoined', names => setMessage(names.join('、') + ' が参加しました'));
 
-    socket.on('showBanner', ({ message: banner }) => {
+    // ルーム作成成功時の処理
+    socket.on(SOCKET_EVENTS.ROOM_CREATED, (id) => {
+      dispatch({ type: SOCKET_EVENTS.ROOM_CREATED, payload: id });
+      dispatch({ type: 'SET_CREATOR', payload: socket.id });
+    });
+    
+    // ルーム参加成功時の処理
+    socket.on(SOCKET_EVENTS.JOINED_ROOM, (id) => {
+      dispatch({ type: SOCKET_EVENTS.JOINED_ROOM, payload: id });
+    });
+    
+    // ユーザー参加通知
+    socket.on(SOCKET_EVENTS.USER_JOINED, (names) => {
+      dispatch({ type: SOCKET_EVENTS.USER_JOINED, payload: { names } });
+    });
+
+    // バナー表示時の処理
+    socket.on(SOCKET_EVENTS.SHOW_BANNER, ({ message: banner }) => {
       clearInterval(intervalRef.current);
       clearTimeout(nextTimeoutRef.current);
-      setDisplayedQuestion('');
-      setMessage(banner);
+      dispatch({ type: SOCKET_EVENTS.SHOW_BANNER, payload: { message: banner } });
     });
 
-    socket.on('startQuiz', data => {
-      setQuiz(data);
-      setTotalQuestions(data.total);
-      setPartial('');
-      setMessage('');
-      setCurrentResponder(null);
-      setHasBuzzed(false);
-      setLockedSet(new Set());
-      setCorrectInfo({ show: false, name: '', answer: '' });
-
+    // クイズ開始時の処理
+    socket.on(SOCKET_EVENTS.START_QUIZ, (data) => {
+      dispatch({ type: SOCKET_EVENTS.START_QUIZ, payload: data });
       questionRef.current = data.question;
       startTypewriter(0);
     });
 
-    socket.on('pauseTypewriter', () => clearInterval(intervalRef.current));
-
-    socket.on('buzzed', name => {
-      setCurrentResponder(name);
-      setMessage(`${name} が回答中`);
-      setHasBuzzed(name === username);
+    // タイプライター効果の一時停止
+    socket.on(SOCKET_EVENTS.PAUSE_TYPEWRITER, () => {
+      clearInterval(intervalRef.current);
+      dispatch({ type: SOCKET_EVENTS.PAUSE_TYPEWRITER });
     });
 
-    socket.on('partialFeedback', ({ partial }) => {
-      setPartial(partial);
-      setMessage(partial);
+    // 早押しボタンが押された時の処理
+    socket.on(SOCKET_EVENTS.BUZZED, (name) => {
+      dispatch({ 
+        type: SOCKET_EVENTS.BUZZED, 
+        payload: { name, hasBuzzed: name === username } 
+      });
     });
 
-    socket.on('answerResult', ({ name, correct, answer }) => {
-      setScores(prev => ({ ...prev, [name]: (prev[name] || 0) + (correct ? 1 : 0) }));
+    // 部分的な回答フィードバック
+    socket.on(SOCKET_EVENTS.PARTIAL_FEEDBACK, ({ partial }) => {
+      dispatch({ type: SOCKET_EVENTS.PARTIAL_FEEDBACK, payload: { partial } });
+    });
+
+    // 回答結果の処理
+    socket.on(SOCKET_EVENTS.ANSWER_RESULT, ({ name, correct, answer }) => {
+      dispatch({ type: SOCKET_EVENTS.ANSWER_RESULT, payload: { name, correct, answer } });
+      
       if (correct) {
-        setMessage('');
-        setDisplayedQuestion('');
-        setCorrectInfo({ show: true, name, answer });
         clearTimeout(nextTimeoutRef.current);
         nextTimeoutRef.current = setTimeout(() => {
-          setCorrectInfo({ show: false, name: '', answer: '' });
-          socket.emit('nextQuestion', joined);
+          dispatch({ type: 'SET_CORRECT_INFO', payload: { show: false, name: '', answer: '' } });
+          socket.emit(SOCKET_EVENTS.NEXT_QUESTION, joined);
         }, 3000);
       } else if (name === username) {
-        setMessage('不正解でした');
-        setLockedSet(prev => new Set(prev).add(username));
-        socket.emit('requestResume', joined);
+        socket.emit(SOCKET_EVENTS.REQUEST_RESUME, joined);
       }
     });
 
-    socket.on('resumeTypewriter', () => {
-      setHasBuzzed(false);
-      setCurrentResponder(null);
-      setMessage('');
-      setPartial('');
+    // タイプライター効果の再開
+    socket.on(SOCKET_EVENTS.RESUME_TYPEWRITER, () => {
+      dispatch({ type: SOCKET_EVENTS.RESUME_TYPEWRITER });
       startTypewriter(charIndexRef.current);
     });
 
-    socket.on('quizEnded', data => {
-      setQuiz(null);
-      setRanking(data);
-      setGameEnded(true);
+    // クイズ終了時の処理
+    socket.on(SOCKET_EVENTS.QUIZ_ENDED, (data) => {
+      dispatch({ type: SOCKET_EVENTS.QUIZ_ENDED, payload: data });
     });
 
-    socket.emit('getRooms');
+    // 初期化：ルーム一覧を取得
+    socket.emit(SOCKET_EVENTS.GET_ROOMS);
+    // クリーンアップ：コンポーネントのアンマウント時にリスナーを削除
     return () => socket.removeAllListeners();
   }, [username]);
 
+  // 選択肢の生成：クイズまたは部分入力が変更されたときに実行
   useEffect(() => {
     if (!quiz) return;
     const idx = partial.length;
     const correctChar = quiz.answer[idx];
-    setOptions(generateRandomHiragana(4, correctChar));
+    const generatedOptions = generateRandomHiragana(4, correctChar);
+    dispatch({ type: 'SET_OPTIONS', payload: generatedOptions });
   }, [quiz, partial]);
 
   const startTypewriter = startIndex => {
     clearInterval(intervalRef.current);
     const text = questionRef.current;
     charIndexRef.current = startIndex;
-    setDisplayedQuestion(text.slice(0, startIndex));
+    dispatch({ type: 'SET_DISPLAYED_QUESTION', payload: text.slice(0, startIndex) });
     intervalRef.current = setInterval(() => {
       const idx = charIndexRef.current;
       if (idx >= text.length) return clearInterval(intervalRef.current);
-      setDisplayedQuestion(prev => prev + text.charAt(idx));
+      dispatch({ type: 'SET_DISPLAYED_QUESTION', payload: text.slice(0, idx + 1) });
       charIndexRef.current = idx + 1;
     }, 100);
   };
 
   const register = () => {
     if (!username.trim()) return;
-    socket.emit('setName', username.trim());
-    setRegistered(true);
-    socket.emit('getRooms');
+    socket.emit(SOCKET_EVENTS.SET_NAME, username.trim());
+    dispatch({ type: 'SET_REGISTERED', payload: true });
+    socket.emit(SOCKET_EVENTS.GET_ROOMS);
   };
-  const createRoom = () => socket.emit('createRoom');
-  const joinRoom = id => socket.emit('joinRoom', { roomId: id });
-  const start = () => socket.emit('beginQuiz', joined);
-  const buzz = () => socket.emit('buzz', joined);
+  const createRoom = () => socket.emit(SOCKET_EVENTS.CREATE_ROOM);
+  const joinRoom = id => socket.emit(SOCKET_EVENTS.JOIN_ROOM, { roomId: id });
+  const start = () => socket.emit(SOCKET_EVENTS.BEGIN_QUIZ, joined);
+  const buzz = () => socket.emit(SOCKET_EVENTS.BUZZ, joined);
   const answer = opt => {
-    if (hasBuzzed && currentResponder === username) socket.emit('submitChar', { roomId: joined, char: opt });
+    if (hasBuzzed && currentResponder === username) socket.emit(SOCKET_EVENTS.SUBMIT_CHAR, { roomId: joined, char: opt });
   };
   const reset = () => {
-    socket.emit('getRooms');
-    setJoined(null);
-    setCreator(null);
-    resetGameState();
+    socket.emit(SOCKET_EVENTS.GET_ROOMS);
+    dispatch({ type: 'RESET_GAME' });
   };
 
-  function resetGameState() {
-    setQuiz(null);
-    setMessage('');
-    setGameEnded(false);
-    setScores({});
-    setTotalQuestions(0);
-    setRanking([]);
-    setHasBuzzed(false);
-    setCurrentResponder(null);
-    setLockedSet(new Set());
-    setDisplayedQuestion('');
-    setPartial('');
-    setOptions([]);
-    setCorrectInfo({ show: false, name: '', answer: '' });
-    clearInterval(intervalRef.current);
-  }
+
 
   // バナー表示中
   if (message === '問題！') {
@@ -214,7 +211,7 @@ export default function RoomManager() {
   // 登録画面
   if (!registered) return (
     <div>
-      <input value={username} onChange={e => setUsername(e.target.value)} placeholder="ユーザー名を入力" />
+      <input value={username} onChange={e => dispatch({ type: 'SET_USERNAME', payload: e.target.value })} placeholder="ユーザー名を入力" />
       <button onClick={register}>登録</button>
     </div>
   );

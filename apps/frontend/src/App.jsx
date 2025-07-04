@@ -1,9 +1,14 @@
-import { useReducer, useEffect, useRef } from 'react';
-import { io } from 'socket.io-client';
-import { SOCKET_EVENTS } from './constants/constants';
-import { gameReducer, initialGameState } from './reducers/gameReducer';
+import { useReducer, useEffect, useRef } from "react";
+import { io } from "socket.io-client";
+import { SOCKET_EVENTS } from "./constants/constants";
+import { gameReducer, initialGameState } from "./reducers/gameReducer";
+import CreateRoom from "./components/CreateRoom";
+import QuizView from "./components/QuizView";
+import Loby from "./components/Loby";
+import Result from "./components/Result";
+import Register from "./components/Register";
 
-const socket = io('http://localhost:5001');
+const socket = io("http://localhost:5001");
 
 // ひらがなを生成するヘルパー関数
 const generateRandomHiragana = (count, correctChar) => {
@@ -12,9 +17,9 @@ const generateRandomHiragana = (count, correctChar) => {
   const all = [];
   for (let i = start; i <= end; i++) {
     const c = String.fromCharCode(i);
-    if (!['ゔ', 'ゐ', 'ゑ'].includes(c)) all.push(c);
+    if (!["ゔ", "ゐ", "ゑ"].includes(c)) all.push(c);
   }
-  const avail = all.filter(c => c !== correctChar);
+  const avail = all.filter((c) => c !== correctChar);
   for (let i = avail.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [avail[i], avail[j]] = [avail[j], avail[i]];
@@ -52,7 +57,7 @@ export default function RoomManager() {
   } = state;
 
   const charIndexRef = useRef(0);
-  const questionRef = useRef('');
+  const questionRef = useRef("");
   const intervalRef = useRef(null);
   const nextTimeoutRef = useRef(null);
 
@@ -62,7 +67,7 @@ export default function RoomManager() {
     socket.on(SOCKET_EVENTS.ROOMS_LIST, (rooms) => {
       dispatch({ type: SOCKET_EVENTS.ROOMS_LIST, payload: rooms });
     });
-    
+
     // エラーメッセージの受信
     socket.on(SOCKET_EVENTS.ERROR_MESSAGE, (message) => {
       dispatch({ type: SOCKET_EVENTS.ERROR_MESSAGE, payload: message });
@@ -71,14 +76,14 @@ export default function RoomManager() {
     // ルーム作成成功時の処理
     socket.on(SOCKET_EVENTS.ROOM_CREATED, (id) => {
       dispatch({ type: SOCKET_EVENTS.ROOM_CREATED, payload: id });
-      dispatch({ type: 'SET_CREATOR', payload: socket.id });
+      dispatch({ type: "SET_CREATOR", payload: socket.id });
     });
-    
+
     // ルーム参加成功時の処理
     socket.on(SOCKET_EVENTS.JOINED_ROOM, (id) => {
       dispatch({ type: SOCKET_EVENTS.JOINED_ROOM, payload: id });
     });
-    
+
     // ユーザー参加通知
     socket.on(SOCKET_EVENTS.USER_JOINED, (names) => {
       dispatch({ type: SOCKET_EVENTS.USER_JOINED, payload: { names } });
@@ -88,7 +93,10 @@ export default function RoomManager() {
     socket.on(SOCKET_EVENTS.SHOW_BANNER, ({ message: banner }) => {
       clearInterval(intervalRef.current);
       clearTimeout(nextTimeoutRef.current);
-      dispatch({ type: SOCKET_EVENTS.SHOW_BANNER, payload: { message: banner } });
+      dispatch({
+        type: SOCKET_EVENTS.SHOW_BANNER,
+        payload: { message: banner },
+      });
     });
 
     // クイズ開始時の処理
@@ -106,9 +114,9 @@ export default function RoomManager() {
 
     // 早押しボタンが押された時の処理
     socket.on(SOCKET_EVENTS.BUZZED, (name) => {
-      dispatch({ 
-        type: SOCKET_EVENTS.BUZZED, 
-        payload: { name, hasBuzzed: name === username } 
+      dispatch({
+        type: SOCKET_EVENTS.BUZZED,
+        payload: { name, hasBuzzed: name === username },
       });
     });
 
@@ -119,12 +127,18 @@ export default function RoomManager() {
 
     // 回答結果の処理
     socket.on(SOCKET_EVENTS.ANSWER_RESULT, ({ name, correct, answer }) => {
-      dispatch({ type: SOCKET_EVENTS.ANSWER_RESULT, payload: { name, correct, answer } });
-      
+      dispatch({
+        type: SOCKET_EVENTS.ANSWER_RESULT,
+        payload: { name, correct, answer },
+      });
+
       if (correct) {
         clearTimeout(nextTimeoutRef.current);
         nextTimeoutRef.current = setTimeout(() => {
-          dispatch({ type: 'SET_CORRECT_INFO', payload: { show: false, name: '', answer: '' } });
+          dispatch({
+            type: "SET_CORRECT_INFO",
+            payload: { show: false, name: "", answer: "" },
+          });
           socket.emit(SOCKET_EVENTS.NEXT_QUESTION, joined);
         }, 3000);
       } else if (name === username) {
@@ -155,18 +169,24 @@ export default function RoomManager() {
     const idx = partial.length;
     const correctChar = quiz.answer[idx];
     const generatedOptions = generateRandomHiragana(4, correctChar);
-    dispatch({ type: 'SET_OPTIONS', payload: generatedOptions });
+    dispatch({ type: "SET_OPTIONS", payload: generatedOptions });
   }, [quiz, partial]);
 
-  const startTypewriter = startIndex => {
+  const startTypewriter = (startIndex) => {
     clearInterval(intervalRef.current);
     const text = questionRef.current;
     charIndexRef.current = startIndex;
-    dispatch({ type: 'SET_DISPLAYED_QUESTION', payload: text.slice(0, startIndex) });
+    dispatch({
+      type: "SET_DISPLAYED_QUESTION",
+      payload: text.slice(0, startIndex),
+    });
     intervalRef.current = setInterval(() => {
       const idx = charIndexRef.current;
       if (idx >= text.length) return clearInterval(intervalRef.current);
-      dispatch({ type: 'SET_DISPLAYED_QUESTION', payload: text.slice(0, idx + 1) });
+      dispatch({
+        type: "SET_DISPLAYED_QUESTION",
+        payload: text.slice(0, idx + 1),
+      });
       charIndexRef.current = idx + 1;
     }, 100);
   };
@@ -174,25 +194,24 @@ export default function RoomManager() {
   const register = () => {
     if (!username.trim()) return;
     socket.emit(SOCKET_EVENTS.SET_NAME, username.trim());
-    dispatch({ type: 'SET_REGISTERED', payload: true });
+    dispatch({ type: "SET_REGISTERED", payload: true });
     socket.emit(SOCKET_EVENTS.GET_ROOMS);
   };
   const createRoom = () => socket.emit(SOCKET_EVENTS.CREATE_ROOM);
-  const joinRoom = id => socket.emit(SOCKET_EVENTS.JOIN_ROOM, { roomId: id });
+  const joinRoom = (id) => socket.emit(SOCKET_EVENTS.JOIN_ROOM, { roomId: id });
   const start = () => socket.emit(SOCKET_EVENTS.BEGIN_QUIZ, joined);
   const buzz = () => socket.emit(SOCKET_EVENTS.BUZZ, joined);
-  const answer = opt => {
-    if (hasBuzzed && currentResponder === username) socket.emit(SOCKET_EVENTS.SUBMIT_CHAR, { roomId: joined, char: opt });
+  const answer = (opt) => {
+    if (hasBuzzed && currentResponder === username)
+      socket.emit(SOCKET_EVENTS.SUBMIT_CHAR, { roomId: joined, char: opt });
   };
   const reset = () => {
     socket.emit(SOCKET_EVENTS.GET_ROOMS);
-    dispatch({ type: 'RESET_GAME' });
+    dispatch({ type: "RESET_GAME" });
   };
 
-
-
   // バナー表示中
-  if (message === '問題！') {
+  if (message === "問題！") {
     return (
       <div className="banner">
         <h1>問題！</h1>
@@ -203,69 +222,39 @@ export default function RoomManager() {
   if (correctInfo.show) {
     return (
       <div className="overlay">
-        <p>{correctInfo.name} が正解！答え: {correctInfo.answer}</p>
+        <p>
+          {correctInfo.name} が正解！答え: {correctInfo.answer}
+        </p>
       </div>
     );
   }
 
   // 登録画面
-  if (!registered) return (
-    <div>
-      <input value={username} onChange={e => dispatch({ type: 'SET_USERNAME', payload: e.target.value })} placeholder="ユーザー名を入力" />
-      <button onClick={register}>登録</button>
-    </div>
-  );
+  if (!registered)
+    return (
+      <Register
+        {...state}
+        onChange={(e) => {
+          dispatch({ type: "SET_USERNAME", payload: e.target.value });
+        }}
+        register={register}
+      />
+    );
 
   // リザルト画面
-  if (gameEnded) return (
-    <div>
-      <h3>リザルト</h3>
-      <ol>{ranking.map(p => <li key={p.name}>{p.name}: {p.score}点</li>)}</ol>
-      <button onClick={reset}>トップに戻る</button>
-    </div>
-  );
+  if (gameEnded) return <Result {...state} reset={reset} />;
 
   // クイズ画面
   return (
     <div>
       {!joined ? (
-        <div>
-          <button onClick={createRoom}>ルーム作成</button>
-          <ul>{rooms.map(r => (
-            <li key={r}>{r} <button onClick={() => joinRoom(r)}>参加</button></li>
-          ))}</ul>
-          {message && <p>{message}</p>}
-        </div>
+        <CreateRoom {...state} createRoom={createRoom} joinRoom={joinRoom} />
       ) : (
         <div>
           {!quiz ? (
-            <div>
-              <p>ルーム: {joined}</p>
-              {creator === socket.id && <button onClick={start}>開始</button>}
-            </div>
+            <Loby {...state} socket={socket} start={start} />
           ) : (
-            <div>
-              <p>{quiz.index + 1}/{totalQuestions}問目: {displayedQuestion}</p>
-              {/* 自身が回答中はボタンを非表示 */}
-              {!(hasBuzzed && currentResponder === username) && (
-                <button
-                  onClick={buzz}
-                  disabled={lockedSet.has(username) || (currentResponder && currentResponder !== username)}
-                >
-                  {lockedSet.has(username)
-                    ? '解答不可'
-                    : currentResponder
-                      ? '他の人が回答中…'
-                      : '早押し'}
-                </button>
-              )}
-              {hasBuzzed && currentResponder === username && (
-                <div>{options.map(opt => (
-                  <button key={opt} onClick={() => answer(opt)}>{opt}</button>
-                ))}</div>
-              )}
-              {message && <p>{message}</p>}
-            </div>
+            <QuizView {...state} answer={answer} buzz={buzz} />
           )}
         </div>
       )}

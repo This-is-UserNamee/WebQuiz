@@ -13,7 +13,26 @@ const QuizView = ({
   options,
   answer,
   message,
+  correctInfo,
 }) => {
+  if (message === "問題！") {
+    return (
+      <div className="banner">
+        <h1>問題！</h1>
+      </div>
+    );
+  }
+
+  if (correctInfo.show) {
+    return (
+      <div className="overlay">
+        <p>
+          {correctInfo.name} が正解！答え: {correctInfo.answer}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <p>

@@ -2,6 +2,7 @@ import { useReducer, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import { SOCKET_EVENTS } from "./constants/constants";
 import { gameReducer, initialGameState } from "./reducers/gameReducer";
+import { useSocketEvents } from "./hooks/useSocketEvents";
 import CreateRoom from "./components/CreateRoom";
 import QuizView from "./components/QuizView";
 import Loby from "./components/Loby";
@@ -54,123 +55,14 @@ export default function RoomManager() {
     partial,
     options,
     correctInfo,
+    lastAction,
+    lastActionPayload,
   } = state;
 
   const charIndexRef = useRef(0);
   const questionRef = useRef("");
   const intervalRef = useRef(null);
   const nextTimeoutRef = useRef(null);
-
-  // Socket.IOイベントリスナーの設定
-  useEffect(() => {
-    // ルーム一覧の取得
-    socket.on(SOCKET_EVENTS.ROOMS_LIST, (rooms) => {
-      dispatch({ type: SOCKET_EVENTS.ROOMS_LIST, payload: rooms });
-    });
-
-    // エラーメッセージの受信
-    socket.on(SOCKET_EVENTS.ERROR_MESSAGE, (message) => {
-      dispatch({ type: SOCKET_EVENTS.ERROR_MESSAGE, payload: message });
-    });
-
-    // ルーム作成成功時の処理
-    socket.on(SOCKET_EVENTS.ROOM_CREATED, (id) => {
-      dispatch({ type: SOCKET_EVENTS.ROOM_CREATED, payload: id });
-      dispatch({ type: "SET_CREATOR", payload: socket.id });
-    });
-
-    // ルーム参加成功時の処理
-    socket.on(SOCKET_EVENTS.JOINED_ROOM, (id) => {
-      dispatch({ type: SOCKET_EVENTS.JOINED_ROOM, payload: id });
-    });
-
-    // ユーザー参加通知
-    socket.on(SOCKET_EVENTS.USER_JOINED, (names) => {
-      dispatch({ type: SOCKET_EVENTS.USER_JOINED, payload: { names } });
-    });
-
-    // バナー表示時の処理
-    socket.on(SOCKET_EVENTS.SHOW_BANNER, ({ message: banner }) => {
-      clearInterval(intervalRef.current);
-      clearTimeout(nextTimeoutRef.current);
-      dispatch({
-        type: SOCKET_EVENTS.SHOW_BANNER,
-        payload: { message: banner },
-      });
-    });
-
-    // クイズ開始時の処理
-    socket.on(SOCKET_EVENTS.START_QUIZ, (data) => {
-      dispatch({ type: SOCKET_EVENTS.START_QUIZ, payload: data });
-      questionRef.current = data.question;
-      startTypewriter(0);
-    });
-
-    // タイプライター効果の一時停止
-    socket.on(SOCKET_EVENTS.PAUSE_TYPEWRITER, () => {
-      clearInterval(intervalRef.current);
-      dispatch({ type: SOCKET_EVENTS.PAUSE_TYPEWRITER });
-    });
-
-    // 早押しボタンが押された時の処理
-    socket.on(SOCKET_EVENTS.BUZZED, (name) => {
-      dispatch({
-        type: SOCKET_EVENTS.BUZZED,
-        payload: { name, hasBuzzed: name === username },
-      });
-    });
-
-    // 部分的な回答フィードバック
-    socket.on(SOCKET_EVENTS.PARTIAL_FEEDBACK, ({ partial }) => {
-      dispatch({ type: SOCKET_EVENTS.PARTIAL_FEEDBACK, payload: { partial } });
-    });
-
-    // 回答結果の処理
-    socket.on(SOCKET_EVENTS.ANSWER_RESULT, ({ name, correct, answer }) => {
-      dispatch({
-        type: SOCKET_EVENTS.ANSWER_RESULT,
-        payload: { name, correct, answer },
-      });
-
-      if (correct) {
-        clearTimeout(nextTimeoutRef.current);
-        nextTimeoutRef.current = setTimeout(() => {
-          dispatch({
-            type: "SET_CORRECT_INFO",
-            payload: { show: false, name: "", answer: "" },
-          });
-          socket.emit(SOCKET_EVENTS.NEXT_QUESTION, joined);
-        }, 3000);
-      } else if (name === username) {
-        socket.emit(SOCKET_EVENTS.REQUEST_RESUME, joined);
-      }
-    });
-
-    // タイプライター効果の再開
-    socket.on(SOCKET_EVENTS.RESUME_TYPEWRITER, () => {
-      dispatch({ type: SOCKET_EVENTS.RESUME_TYPEWRITER });
-      startTypewriter(charIndexRef.current);
-    });
-
-    // クイズ終了時の処理
-    socket.on(SOCKET_EVENTS.QUIZ_ENDED, (data) => {
-      dispatch({ type: SOCKET_EVENTS.QUIZ_ENDED, payload: data });
-    });
-
-    // 初期化：ルーム一覧を取得
-    socket.emit(SOCKET_EVENTS.GET_ROOMS);
-    // クリーンアップ：コンポーネントのアンマウント時にリスナーを削除
-    return () => socket.removeAllListeners();
-  }, [username]);
-
-  // 選択肢の生成：クイズまたは部分入力が変更されたときに実行
-  useEffect(() => {
-    if (!quiz) return;
-    const idx = partial.length;
-    const correctChar = quiz.answer[idx];
-    const generatedOptions = generateRandomHiragana(4, correctChar);
-    dispatch({ type: "SET_OPTIONS", payload: generatedOptions });
-  }, [quiz, partial]);
 
   const startTypewriter = (startIndex) => {
     clearInterval(intervalRef.current);
@@ -191,6 +83,64 @@ export default function RoomManager() {
     }, 100);
   };
 
+  // Socket.IOイベントリスナーの設定
+  useSocketEvents(socket, dispatch, username, joined);
+
+  // stateの変更を監視して副作用を実行
+  useEffect(() => {
+    switch (lastAction) {
+      case SOCKET_EVENTS.SHOW_BANNER:
+        clearInterval(intervalRef.current);
+        clearTimeout(nextTimeoutRef.current);
+        break;
+
+      case SOCKET_EVENTS.START_QUIZ:
+        if (lastActionPayload) {
+          questionRef.current = lastActionPayload.question;
+          startTypewriter(0);
+        }
+        break;
+
+      case SOCKET_EVENTS.PAUSE_TYPEWRITER:
+        clearInterval(intervalRef.current);
+        break;
+
+      case SOCKET_EVENTS.ANSWER_RESULT:
+        if (lastActionPayload) {
+          const { name, correct, answer } = lastActionPayload;
+          if (correct) {
+            clearTimeout(nextTimeoutRef.current);
+            nextTimeoutRef.current = setTimeout(() => {
+              dispatch({
+                type: "SET_CORRECT_INFO",
+                payload: { show: false, name: "", answer: "" },
+              });
+              socket.emit(SOCKET_EVENTS.NEXT_QUESTION, joined);
+            }, 3000);
+          } else if (name === username) {
+            socket.emit(SOCKET_EVENTS.REQUEST_RESUME, joined);
+          }
+        }
+        break;
+
+      case SOCKET_EVENTS.RESUME_TYPEWRITER:
+        startTypewriter(charIndexRef.current);
+        break;
+
+      default:
+        break;
+    }
+  }, [lastAction, lastActionPayload, username, joined]);
+
+  // 選択肢の生成：クイズまたは部分入力が変更されたときに実行
+  useEffect(() => {
+    if (!quiz) return;
+    const idx = partial.length;
+    const correctChar = quiz.answer[idx];
+    const generatedOptions = generateRandomHiragana(4, correctChar);
+    dispatch({ type: "SET_OPTIONS", payload: generatedOptions });
+  }, [quiz, partial]);
+
   const register = () => {
     if (!username.trim()) return;
     socket.emit(SOCKET_EVENTS.SET_NAME, username.trim());
@@ -210,25 +160,6 @@ export default function RoomManager() {
     dispatch({ type: "RESET_GAME" });
   };
 
-  // バナー表示中
-  if (message === "問題！") {
-    return (
-      <div className="banner">
-        <h1>問題！</h1>
-      </div>
-    );
-  }
-  // 正解オーバーレイ
-  if (correctInfo.show) {
-    return (
-      <div className="overlay">
-        <p>
-          {correctInfo.name} が正解！答え: {correctInfo.answer}
-        </p>
-      </div>
-    );
-  }
-
   // 登録画面
   if (!registered)
     return (
@@ -244,20 +175,18 @@ export default function RoomManager() {
   // リザルト画面
   if (gameEnded) return <Result {...state} reset={reset} />;
 
+  // ルームに参加していない場合はルーム作成画面
+  if (!joined) {
+    return (
+      <CreateRoom {...state} createRoom={createRoom} joinRoom={joinRoom} />
+    );
+  }
+
+  // ルームに参加しているがクイズが開始されていない場合はロビー画面
+  if (!quiz) {
+    return <Loby {...state} socket={socket} start={start} />;
+  }
+
   // クイズ画面
-  return (
-    <div>
-      {!joined ? (
-        <CreateRoom {...state} createRoom={createRoom} joinRoom={joinRoom} />
-      ) : (
-        <div>
-          {!quiz ? (
-            <Loby {...state} socket={socket} start={start} />
-          ) : (
-            <QuizView {...state} answer={answer} buzz={buzz} />
-          )}
-        </div>
-      )}
-    </div>
-  );
+  return <QuizView {...state} answer={answer} buzz={buzz} />;
 }

@@ -41,6 +41,8 @@ export function gameReducer(state, action) {
         ...state,
         displayedQuestion: "",
         message: action.payload.message,
+        lastAction: SOCKET_EVENTS.SHOW_BANNER,
+        lastActionPayload: action.payload,
       };
 
     case SOCKET_EVENTS.START_QUIZ:
@@ -54,11 +56,15 @@ export function gameReducer(state, action) {
         hasBuzzed: false,
         lockedSet: new Set(),
         correctInfo: { show: false, name: "", answer: "" },
+        lastAction: SOCKET_EVENTS.START_QUIZ,
+        lastActionPayload: action.payload,
       };
 
     case SOCKET_EVENTS.PAUSE_TYPEWRITER:
       return {
         ...state,
+        lastAction: SOCKET_EVENTS.PAUSE_TYPEWRITER,
+        lastActionPayload: action.payload,
       };
 
     case SOCKET_EVENTS.BUZZED:
@@ -90,6 +96,8 @@ export function gameReducer(state, action) {
           message: "",
           displayedQuestion: "",
           correctInfo: { show: true, name, answer },
+          lastAction: SOCKET_EVENTS.ANSWER_RESULT,
+          lastActionPayload: action.payload,
         };
       } else if (name === state.username) {
         return {
@@ -97,11 +105,15 @@ export function gameReducer(state, action) {
           scores: newScores,
           message: "不正解でした",
           lockedSet: new Set(state.lockedSet).add(state.username),
+          lastAction: SOCKET_EVENTS.ANSWER_RESULT,
+          lastActionPayload: action.payload,
         };
       }
       return {
         ...state,
         scores: newScores,
+        lastAction: SOCKET_EVENTS.ANSWER_RESULT,
+        lastActionPayload: action.payload,
       };
 
     // case SOCKET_EVENTS.NEXT_QUESTION:
@@ -115,6 +127,8 @@ export function gameReducer(state, action) {
         currentResponder: null,
         message: "",
         partial: "",
+        lastAction: SOCKET_EVENTS.RESUME_TYPEWRITER,
+        lastActionPayload: action.payload,
       };
 
     case SOCKET_EVENTS.QUIZ_ENDED:
@@ -190,6 +204,8 @@ function resetGameState() {
     partial: "",
     options: [],
     correctInfo: { show: false, name: "", answer: "" },
+    lastAction: null,
+    lastActionPayload: null,
   };
 }
 
@@ -212,4 +228,7 @@ export const initialGameState = {
   partial: "",
   options: [],
   correctInfo: { show: false, name: "", answer: "" },
+  // アクションタイプ追跡用
+  lastAction: null,
+  lastActionPayload: null,
 };

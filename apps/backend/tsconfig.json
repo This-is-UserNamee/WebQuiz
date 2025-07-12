@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2020", // 最新のECMAScript機能をサポートするNode.jsバージョンを対象
+    "module": "CommonJS", // Node.jsが採用しているモジュールシステム
+    "rootDir": "./", // TypeScriptファイルのルートディレクトリ
+    "outDir": "./dist", // コンパイル後のJavaScriptファイルが出力されるディレクトリ
+    "strict": true, // 型チェックを厳格に行う
+    "esModuleInterop": true, // CommonJSとESモジュールの相互運用を許可
+    "skipLibCheck": true, // 依存ライブラリの型チェックをスキップ
+    "forceConsistentCasingInFileNames": true, // ファイル名の大文字小文字を区別
+    "resolveJsonModule": true // JSONファイルのインポートを許可
+  },
+  "include": [
+    "**/*.ts" // コンパイル対象にすべての.tsファイルを含める
+  ],
+  "exclude": [
+    "node_modules" // node_modulesはコンパイル対象から除外
+  ]
+}

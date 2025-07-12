@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import RegisterPlayer from './components/RegisterPlayer';
 import Lobby from './components/Lobby';
 import RoomWaiting from './components/RoomWaiting';
+import GameScreen from './components/GameScreen';
 import { Room } from './types'; // Room 型をインポート
 import './App.css';
 
@@ -35,13 +36,24 @@ function App() {
     });
 
     // 受信する全てのSocket.IOイベントをログに出力（デバッグ用）
-    newSocket.onAny((eventName, ...args) => {
-      console.log(`[DEBUG_APP_ANY_EVENT] Received event: '${eventName}' (Type: ${typeof eventName})`, args);
+    newSocket.onAny((eventName, payload: any,...args) => {
+      const expectedEventName = 'roomUpdated';
+      //こっちのログにはroomUpdatedが表示されるのにroomUpdatadが発火してくれないので、この中で無理やり動かす。
+      if (eventName === expectedEventName) {
+        // もし名前が一致しているのに個別のリスナーが動かない場合、それは別の問題
+        if (payload && payload.room) {
+          setCurrentRoom(payload.room);
+        } else {
+          console.error('[DEBUG_APP_EVENT] roomUpdated payload is missing room property:', payload);
+        }
+      } else {
+        // 名前が一致していない場合、ここに表示される
+        console.log(`[DEBUG_APP_ANY_EVENT] '${eventName}' を検知。'${expectedEventName}' ではないため個別リスナーは動きません。`);
+      }
     });
 
     // roomUpdated イベントを購読し、currentRoom を更新
     newSocket.on('roomUpdated', (payload: any) => {
-      console.log('[DEBUG_APP_EVENT] roomUpdated event received - RAW PAYLOAD:', payload);
       if (payload && payload.room) {
         setCurrentRoom(payload.room);
       } else {
@@ -74,7 +86,7 @@ function App() {
 
   const handleGameStarted = (room: Room) => { // room の型も Room に変更
     setCurrentRoom(room);
-    setInGame(true); // ゲームが開始されたらゲーム中
+    
   };
 
   return (
@@ -86,7 +98,7 @@ function App() {
         <RegisterPlayer socket={socket} onRegistered={handlePlayerRegistered} />
       ) : !currentRoom ? (
         <Lobby socket={socket} playerId={playerId} playerName={playerName!} onJoinRoom={handleJoinRoom} />
-      ) : !inGame ? (
+      ) : currentRoom.state === 'waiting' ? (
         <RoomWaiting
           socket={socket}
           room={currentRoom}
@@ -95,12 +107,11 @@ function App() {
           onGameStarted={handleGameStarted}
         />
       ) : (
-        <div>
-          <p>Registered as: {playerName} (ID: {playerId})</p>
-          <p>Joined Room: {currentRoom.id}</p>
-          <p>Game is in progress!</p>
-          {/* ここにゲーム画面のコンポーネントを配置 */}
-        </div>
+        <GameScreen
+          socket={socket}
+          room={currentRoom!}
+          playerId={playerId!}
+        />
       )}
     </div>
   );

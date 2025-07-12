@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Socket } from 'socket.io-client';
-import { Player, Room } from '../types';
+import { Room } from '../types';
 
 interface RoomWaitingProps {
   socket: Socket | null;
@@ -19,6 +19,8 @@ const RoomWaiting: React.FC<RoomWaitingProps> = ({ socket, room, playerId, onLea
 
   useEffect(() => {
     if (!socket) return;
+
+    
 
     // ルーム情報更新イベントはApp.tsxで処理されるため、ここでは不要
     // socket.on('roomUpdated', (updatedRoom: Room) => {
@@ -79,8 +81,6 @@ const RoomWaiting: React.FC<RoomWaitingProps> = ({ socket, room, playerId, onLea
       <p>State: {room.state}</p>
 
       <h3>Players in Room:</h3>
-      {/* レンダリング時のroom.playersの内容をログに出力 */}
-      {console.log('[DEBUG_ROOMWAITING_RENDER] Players array for rendering:', room.players && Object.values(room.players))}
       <ul>
         {room.players && Object.values(room.players).map((player) => (
           <li key={player.id}>

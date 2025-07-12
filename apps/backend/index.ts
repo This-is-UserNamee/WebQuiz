@@ -188,7 +188,6 @@ io.on('connection', (socket) => {
     socket.emit('joinedRoom', { room: room, playerId: socket.id });
     io.to(roomId).emit('roomUpdated', { room: room }); // ルーム内の全員に更新を通知
     console.log(`[DEBUG_BACKEND] Sending roomUpdated for room ${roomId} to clients in room:`, Array.from(io.sockets.adapter.rooms.get(roomId) || []));
-    console.log(`[DEBUG_BACKEND] Sending roomUpdated for room ${roomId}:`, JSON.stringify(room, null, 2));
     broadcastRoomList();
   });
 

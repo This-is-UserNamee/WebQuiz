@@ -236,7 +236,7 @@ io.on('connection', (socket) => {
     const room = state.rooms[roomId];
     const currentState = room?.gameData.questionState;
     // 早押し可能か検証 (読上中 or タイマー作動中か、回答権を持つ人がいないか)
-    if (!room || !room.players[socket.id] || (currentState !== 'reading' && currentState !== 'timer_running') || room.gameData.activeAnswer !== null) return;
+    if (!room || !room.players[socket.id] || (currentState !== 'reading' && currentState !== 'timer_running') || room.gameData.activeAnswer !== null || room.gameData.answeredPlayerIds.includes(socket.id)) return;
 
     // 中断処理のために、現在がどのフェーズだったかを保存
     room.gameData.prePauseState = currentState;
@@ -305,6 +305,7 @@ io.on('connection', (socket) => {
       room.gameData.activeAnswer = null; // 回答権をリセット
       if (!room.gameData.answeredPlayerIds.includes(socket.id)) {
         room.gameData.answeredPlayerIds.push(socket.id);
+        console.log(`[ANSWERED] プレイヤー '${state.players[socket.id].name}' が解答権を失いました。`);
       }
 
       // 全員が誤答したかチェック

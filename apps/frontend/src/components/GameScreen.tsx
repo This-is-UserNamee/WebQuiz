@@ -49,11 +49,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       room.gameData?.questions?.[room.gameData.currentQuestionIndex] || null
     );
     // --- フェーズ1以外はコメントアウト ---
-    // setActiveAnswerPlayerId(room.gameData?.activeAnswer?.playerId || null);
-    // setPlayersScores(room.players || {});
-    // if (room.gameData?.questionState === 'timer_running' && room.gameData.remainingTime > 0) {
-    //   setTimerRemaining(room.gameData.remainingTime);
-    // }
+    setActiveAnswerPlayerId(room.gameData?.activeAnswer?.playerId || null);
+    setPlayersScores(room.players || {});
+    if (room.gameData?.questionState === 'timer_running' && room.gameData.remainingTime > 0) {
+      setTimerRemaining(room.gameData.remainingTime);
+    }
   }, [room]); // roomプロップが変更されたときにこのuseEffectが再実行される
 
   // 読み上げアニメーションとtimerReady送信
@@ -141,7 +141,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
     socket.on("readingStarted", (payload: { room: Room }) => {
       setQuestionState("reading");
       // --- フェーズ1以外はコメントアウト ---
-      // setPlayersScores(payload.room.players);
+      setPlayersScores(payload.room.players);
       console.log(
         "[GameScreen] 読み上げを開始する時に実行されて欲しいReading started."
       );
@@ -165,10 +165,17 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
     socket.on('nextChoice', (payload: { choices: string[] }) => {
       setChoices(payload.choices);
       console.log('[GameScreen] Next choices:', payload.choices);
-    });
+      setTimeout(() => {
+        console.log('[GameScreen] 自動的に誤答を送信します。');
+        handleSubmitCharacter('-1'); // 自動的に誤答を送信
+      }, 5000); // 5秒後に自動的に誤答を送信
+    })
 
     socket.on('answerResult', (payload: { playerId?: string; isCorrect: boolean; isFinal: boolean; correctAnswer?: string; }) => {
       setLastAnswerResult(payload);
+      if (!payload.isCorrect && !payload.isFinal) {
+        setActiveAnswerPlayerId(null);
+      }
       if (payload.isFinal) {
         setQuestionState('result');
         setActiveAnswerPlayerId(null);
@@ -177,37 +184,37 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       console.log('[GameScreen] Answer result:', payload);
     });
 
-    // socket.on('scoreUpdated', (payload: { players: Player[] }) => {
-    //   const newScores: { [playerId: string]: Player } = {};
-    //   payload.players.forEach(p => newScores[p.id] = p);
-    //   setPlayersScores(newScores);
-    //   console.log('[GameScreen] Scores updated:', newScores);
-    // });
+    socket.on('scoreUpdated', (payload: { players: Player[] }) => {
+      const newScores: { [playerId: string]: Player } = {};
+      payload.players.forEach(p => newScores[p.id] = p);
+      setPlayersScores(newScores);
+      console.log('[GameScreen] Scores updated:', newScores);
+    });
 
-    // socket.on('gameFinished', (payload: { room: Room }) => {
-    //   setPlayersScores(payload.room.players);
-    //   console.log('[GameScreen] Game finished.');
-    // });
+    socket.on('gameFinished', (payload: { room: Room }) => {
+      setPlayersScores(payload.room.players);
+      console.log('[GameScreen] Game finished.');
+    });
 
     socket.on('pauseReading', () => {
       setQuestionState('paused');
       console.log('[GameScreen] Reading paused.');
     });
 
-    // socket.on('resumeReading', () => {
-    //   setQuestionState('reading');
-    //   console.log('[GameScreen] Reading resumed.');
-    // });
+    socket.on('resumeReading', () => {
+      setQuestionState('reading');
+      console.log('[GameScreen] Reading resumed.');
+    });
 
     socket.on('pauseTimer', () => {
       setQuestionState('paused');
       console.log('[GameScreen] Timer paused.');
     });
 
-    // socket.on('errorOccurred', ({ message }) => {
-    //   console.error('[GameScreen] Error:', message);
-    //   alert(`Error: ${message}`);
-    // });
+    socket.on('errorOccurred', ({ message }) => {
+      console.error('[GameScreen] Error:', message);
+      alert(`Error: ${message}`);
+    });
 
     return () => {
       socket.off("newQuestion");
@@ -258,7 +265,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
 
       {/* プレイヤーとスコアの表示 */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {/* <div className="players-score">
+      <div className="players-score">
         <h3>Players:</h3>
         <ul>
           {Object.values(playersScores).map(player => (
@@ -267,7 +274,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
             </li>
           ))}
         </ul>
-      </div> */}
+      </div>
 
       {/* 問題表示エリア */}
       {currentQuestion && (
@@ -319,22 +326,24 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
 
       {/* 回答結果表示 */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {/* {lastAnswerResult && (
+      {lastAnswerResult && (
         <div className="answer-result">
           {lastAnswerResult.isCorrect ? (
             <p style={{ color: 'green' }}>正解！</p>
           ) : (
-            <p style={{ color: 'red' }}>不正解！</p>
+            lastAnswerResult.isFinal && (
+              <p style={{ color: "red" }}>不正解！</p>
+            )
           )}
           {lastAnswerResult.isFinal && lastAnswerResult.correctAnswer && (
             <p>正解は: {lastAnswerResult.correctAnswer}</p>
           )}
         </div>
-      )} */}
+      )}
 
       {/* ゲーム終了時の表示 */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {/* {room.state === 'finished' && (
+      {room.state === 'finished' && (
         <div>
           <h3>ゲーム終了！</h3>
           <p>最終スコア:</p>
@@ -344,7 +353,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
             ))}
           </ul>
         </div>
-      )} */}
+      )}
     </div>
   );
 };

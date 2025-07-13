@@ -307,6 +307,11 @@ io.on('connection', (socket) => {
         room.gameData.answeredPlayerIds.push(socket.id);
         console.log(`[ANSWERED] プレイヤー '${state.players[socket.id].name}' が解答権を失いました。`);
       }
+      if(room.players[socket.id].score > 0) {
+        console.log(`[SCORE_DEDUCT] プレイヤー '${state.players[socket.id].name}' のスコアを10点減点します。`);
+        room.players[socket.id].score -= 10;
+        io.to(roomId).emit('scoreUpdated', { players: Object.values(room.players) });
+      }
 
       // 全員が誤答したかチェック
       const activePlayerCount = Object.keys(room.players).length;

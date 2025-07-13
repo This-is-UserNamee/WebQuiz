@@ -399,10 +399,12 @@ const startQuestionLifecycle = (roomId: string) => {
   console.log(`[QUESTION_LIFECYCLE] ルーム [${roomId}] の問題ライフサイクルを開始します。`);
   const room = state.rooms[roomId];
   if (!room) return;
-
+  const hasPlayerWithHighScor: boolean = Object.values(room.players).some(
+    (player) => player.score >= 50
+  );
   // 全問題が終了したかチェック
-  if (room.gameData.currentQuestionIndex >= room.gameData.questions.length) {
-    console.log(`[GAME_FINISH] ルーム [${roomId}] の全問題が終了しました。`);
+  if (room.gameData.currentQuestionIndex >= room.gameData.questions.length || hasPlayerWithHighScor) {
+    console.log(`[GAME_FINISH] ルーム [${roomId}] の終了条件が満たされました。`);
     room.state = 'finished';
     io.to(roomId).emit('gameFinished', { room: room });
     // 10秒後に待機状態に戻る

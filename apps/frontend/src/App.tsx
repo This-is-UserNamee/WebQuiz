@@ -46,9 +46,6 @@ function App() {
         } else {
           console.error('[DEBUG_APP_EVENT] roomUpdated payload is missing room property:', payload);
         }
-      } else {
-        // 名前が一致していない場合、ここに表示される
-        console.log(`[DEBUG_APP_ANY_EVENT] '${eventName}' を検知。'${expectedEventName}' ではないため個別リスナーは動きません。`);
       }
     });
 
@@ -86,8 +83,10 @@ function App() {
 
   const handleGameStarted = (room: Room) => { // room の型も Room に変更
     setCurrentRoom(room);
-    
+    console.log('App.tsx rendering GameScreen with room:', currentRoom);
   };
+
+  
 
   return (
     <div className="App">
@@ -109,8 +108,8 @@ function App() {
       ) : (
         <GameScreen
           socket={socket}
-          room={currentRoom!}
-          playerId={playerId!}
+          room={currentRoom}
+          playerId={playerId}
         />
       )}
     </div>

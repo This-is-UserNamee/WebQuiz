@@ -10,20 +10,74 @@ interface GameScreenProps {
 
 const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
-  const [questionState, setQuestionState] = useState<Room['gameData']['questionState']>('idle');
+  console.log('[GameScreen] Rendering with room:', room);
+  const [questionState, setQuestionState] = useState<Room['gameData']['questionState']>(room.gameData.questionState || 'idle');
   const [activeAnswerPlayerId, setActiveAnswerPlayerId] = useState<string | null>(null);
   const [choices, setChoices] = useState<string[]>([]);
   const [timerRemaining, setTimerRemaining] = useState<number>(0);
   const [playersScores, setPlayersScores] = useState<{ [playerId: string]: Player }>({});
   const [lastAnswerResult, setLastAnswerResult] = useState<{ playerId?: string; isCorrect: boolean; isFinal: boolean; correctAnswer?: string; } | null>(null);
+  // フェーズ1: 問題読み上げ表示とtimerReadyイベントの自動送信
+  // displayedQuestionText: 問題文の読み上げアニメーションで現在表示されているテキスト
+  const [displayedQuestionText, setDisplayedQuestionText] = useState<string>('');
+  // readingIndex: 問題文の読み上げアニメーションで現在何文字目まで表示したかを示すインデックス
+  const [readingIndex, setReadingIndex] = useState<number>(0);
 
+  // roomオブジェクトの変更を監視し、questionStateなどを同期
+  // フェーズ1: questionStateの同期強化
+  // room.gameData.questionState, currentQuestion, activeAnswerPlayerId, playersScores, timerRemaining
+  // をroomオブジェクトの変更に合わせて更新し、UIがバックエンドの状態に追従するようにする。
+  useEffect(() => {
+    setQuestionState(room.gameData.questionState);
+    setCurrentQuestion(room.gameData.questions[room.gameData.currentQuestionIndex] || null);
+    setActiveAnswerPlayerId(room.gameData.activeAnswer?.playerId || null);
+    setPlayersScores(room.players);
+    if (room.gameData.questionState === 'timer_running' && room.gameData.remainingTime > 0) {
+      setTimerRemaining(room.gameData.remainingTime);
+    }
+  }, [room]);
+
+  // 読み上げアニメーションとtimerReady送信
+  // フェーズ1: 問題読み上げアニメーションの実装と自動timerReady送信
+  // questionStateが'reading'の場合、currentQuestion.textを一文字ずつ表示し、
+  // 全て表示し終えたら自動的にtimerReadyイベントをサーバーに送信する。
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined;
+    const READING_SPEED = 100; // 1文字表示する間隔（ミリ秒）
+
+    if (questionState === 'reading' && currentQuestion && readingIndex < currentQuestion.text.length) {
+      interval = setInterval(() => {
+        setReadingIndex(prevIndex => {
+          const nextIndex = prevIndex + 1;
+          if (currentQuestion) {
+            setDisplayedQuestionText(currentQuestion.text.substring(0, nextIndex));
+          }
+
+          if (currentQuestion && nextIndex >= currentQuestion.text.length) {
+            clearInterval(interval);
+            if (socket) {
+              socket.emit('timerReady', { roomId: room.id });
+              console.log('[GameScreen] Reading complete, sent timerReady.');
+            }
+          }
+          return nextIndex;
+        });
+      }, READING_SPEED);
+    } else if (interval) {
+      clearInterval(interval);
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [questionState, currentQuestion, readingIndex, socket, room.id]);
+
+  // Socket.IOイベントハンドリング
   useEffect(() => {
     if (!socket) return;
 
-    // 初期スコア設定
-    setPlayersScores(room.players);
-
-    // 新しい問題イベント
     socket.on('newQuestion', (payload: { question: Question; questionIndex: number; room: Room }) => {
       setCurrentQuestion(payload.question);
       setQuestionState('presenting');
@@ -31,18 +85,19 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       setChoices([]);
       setTimerRemaining(0);
       setLastAnswerResult(null);
-      setPlayersScores(payload.room.players); // スコアもリセットされる可能性があるので更新
+      setPlayersScores(payload.room.players);
+      // フェーズ1: 新しい問題が来た際に読み上げ関連のstateをリセット
+      setDisplayedQuestionText(''); // 表示中の問題文をリセット
+      setReadingIndex(0); // 読み上げ進行度をリセット
       console.log('[GameScreen] New question:', payload.question.text);
     });
 
-    // 読み上げ開始イベント
     socket.on('readingStarted', (payload: { room: Room }) => {
       setQuestionState('reading');
       setPlayersScores(payload.room.players);
       console.log('[GameScreen] Reading started.');
     });
 
-    // タイマー開始イベント
     socket.on('timerStarted', (payload: { room: Room; duration: number }) => {
       setQuestionState('timer_running');
       setTimerRemaining(payload.duration);
@@ -50,7 +105,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       console.log('[GameScreen] Timer started for', payload.duration / 1000, 'seconds.');
     });
 
-    // 早押し結果イベント
     socket.on('buzzerResult', (payload: { winnerId: string; room: Room }) => {
       setQuestionState('answering');
       setActiveAnswerPlayerId(payload.winnerId);
@@ -58,13 +112,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       console.log('[GameScreen] Buzzer result. Winner:', payload.winnerId);
     });
 
-    // 次の選択肢イベント
     socket.on('nextChoice', (payload: { choices: string[] }) => {
       setChoices(payload.choices);
       console.log('[GameScreen] Next choices:', payload.choices);
     });
 
-    // 回答結果イベント
     socket.on('answerResult', (payload: { playerId?: string; isCorrect: boolean; isFinal: boolean; correctAnswer?: string; }) => {
       setLastAnswerResult(payload);
       if (payload.isFinal) {
@@ -75,7 +127,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       console.log('[GameScreen] Answer result:', payload);
     });
 
-    // スコア更新イベント
     socket.on('scoreUpdated', (payload: { players: Player[] }) => {
       const newScores: { [playerId: string]: Player } = {};
       payload.players.forEach(p => newScores[p.id] = p);
@@ -83,33 +134,26 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       console.log('[GameScreen] Scores updated:', newScores);
     });
 
-    // ゲーム終了イベント
     socket.on('gameFinished', (payload: { room: Room }) => {
-      
       setPlayersScores(payload.room.players);
       console.log('[GameScreen] Game finished.');
-      // 必要に応じて、結果表示やロビーへの遷移などをここで処理
     });
 
-    // 読み上げ一時停止イベント
     socket.on('pauseReading', () => {
       setQuestionState('paused');
       console.log('[GameScreen] Reading paused.');
     });
 
-    // 読み上げ再開イベント
     socket.on('resumeReading', () => {
       setQuestionState('reading');
       console.log('[GameScreen] Reading resumed.');
     });
 
-    // タイマー一時停止イベント
     socket.on('pauseTimer', () => {
       setQuestionState('paused');
       console.log('[GameScreen] Timer paused.');
     });
 
-    // エラーイベント
     socket.on('errorOccurred', ({ message }) => {
       console.error('[GameScreen] Error:', message);
       alert(`Error: ${message}`);
@@ -155,13 +199,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
     }
   };
 
-  const handleTimerReady = () => {
-    if (socket && questionState === 'reading') {
-      socket.emit('timerReady', { roomId: room.id });
-      console.log('[GameScreen] Timer ready sent.');
-    }
-  };
-
   return (
     <div className="game-screen">
       <h2>Game in Room: {room.id}</h2>
@@ -183,7 +220,12 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       {currentQuestion && (
         <div className="question-area">
           <h3>Question {room.gameData.currentQuestionIndex + 1}:</h3>
-          <p className="question-text">{currentQuestion.text}</p>
+          {/* フェーズ1: questionStateに応じて問題表示を切り替える */}
+          {questionState === 'presenting' ? (
+            <p className="question-text">次の問題が始まります...</p>
+          ) : (
+            <p className="question-text">{displayedQuestionText}</p>
+          )}
         </div>
       )}
 
@@ -230,11 +272,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
             <p>正解は: {lastAnswerResult.correctAnswer}</p>
           )}
         </div>
-      )}
-
-      {/* 全員準備完了ボタン (reading状態のみ) */}
-      {questionState === 'reading' && (
-        <button onClick={handleTimerReady}>問題読み上げ完了</button>
       )}
 
       {/* ゲーム終了時の表示 */}

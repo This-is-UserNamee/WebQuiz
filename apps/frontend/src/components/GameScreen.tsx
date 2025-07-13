@@ -25,12 +25,12 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
   const [readingIndex, setReadingIndex] = useState<number>(0);
   const [questionIndex, setQuestionIndex] = useState<number>(0);
 
-  // --- フェーズ1以外はコメントアウト ---
-  // const [activeAnswerPlayerId, setActiveAnswerPlayerId] = useState<string | null>(null);
-  // const [choices, setChoices] = useState<string[]>([]);
-  // const [timerRemaining, setTimerRemaining] = useState<number>(0);
-  // const [playersScores, setPlayersScores] = useState<{ [playerId: string]: Player }>({});
-  // const [lastAnswerResult, setLastAnswerResult] = useState<{ playerId?: string; isCorrect: boolean; isFinal: boolean; correctAnswer?: string; } | null>(null);
+  //--- フェーズ1以外はコメントアウト ---
+  const [activeAnswerPlayerId, setActiveAnswerPlayerId] = useState<string | null>(null);
+  const [choices, setChoices] = useState<string[]>([]);
+  const [timerRemaining, setTimerRemaining] = useState<number>(0);
+  const [playersScores, setPlayersScores] = useState<{ [playerId: string]: Player }>({});
+  const [lastAnswerResult, setLastAnswerResult] = useState<{ playerId?: string; isCorrect: boolean; isFinal: boolean; correctAnswer?: string; } | null>(null);
 
   // roomオブジェクトの変更を監視し、questionStateなどを同期
   // フェーズ1: questionStateの同期強化
@@ -126,11 +126,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
         setCurrentQuestion(payload.question);
         setQuestionState("presenting");
         // --- フェーズ1以外はコメントアウト ---
-        // setActiveAnswerPlayerId(null);
-        // setChoices([]);
-        // setTimerRemaining(0);
-        // setLastAnswerResult(null);
-        // setPlayersScores(payload.room.players);
+        setActiveAnswerPlayerId(null);
+        setChoices([]);
+        setTimerRemaining(0);
+        setLastAnswerResult(null);
+        setPlayersScores(payload.room.players);
         // フェーズ1: 新しい問題が来た際に読み上げ関連のstateをリセット
         setDisplayedQuestionText(""); // 表示中の問題文をリセット
         setReadingIndex(0); // リセット
@@ -148,34 +148,34 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
     });
 
     // --- フェーズ1以外はコメントアウト ---
-    // socket.on('timerStarted', (payload: { room: Room; duration: number }) => {
-    //   setQuestionState('timer_running');
-    //   setTimerRemaining(payload.duration);
-    //   setPlayersScores(payload.room.players);
-    //   console.log('[GameScreen] Timer started for', payload.duration / 1000, 'seconds.');
-    // });
+    socket.on('timerStarted', (payload: { room: Room; duration: number }) => {
+      setQuestionState('timer_running');
+      setTimerRemaining(payload.duration);
+      setPlayersScores(payload.room.players);
+      console.log('[GameScreen] Timer started for', payload.duration / 1000, 'seconds.');
+    });
 
-    // socket.on('buzzerResult', (payload: { winnerId: string; room: Room }) => {
-    //   setQuestionState('answering');
-    //   setActiveAnswerPlayerId(payload.winnerId);
-    //   setPlayersScores(payload.room.players);
-    //   console.log('[GameScreen] Buzzer result. Winner:', payload.winnerId);
-    // });
+    socket.on('buzzerResult', (payload: { winnerId: string; room: Room }) => {
+      setQuestionState('answering');
+      setActiveAnswerPlayerId(payload.winnerId);
+      setPlayersScores(payload.room.players);
+      console.log('[GameScreen] Buzzer result. Winner:', payload.winnerId);
+    });
 
-    // socket.on('nextChoice', (payload: { choices: string[] }) => {
-    //   setChoices(payload.choices);
-    //   console.log('[GameScreen] Next choices:', payload.choices);
-    // });
+    socket.on('nextChoice', (payload: { choices: string[] }) => {
+      setChoices(payload.choices);
+      console.log('[GameScreen] Next choices:', payload.choices);
+    });
 
-    // socket.on('answerResult', (payload: { playerId?: string; isCorrect: boolean; isFinal: boolean; correctAnswer?: string; }) => {
-    //   setLastAnswerResult(payload);
-    //   if (payload.isFinal) {
-    //     setQuestionState('result');
-    //     setActiveAnswerPlayerId(null);
-    //     setChoices([]);
-    //   }
-    //   console.log('[GameScreen] Answer result:', payload);
-    // });
+    socket.on('answerResult', (payload: { playerId?: string; isCorrect: boolean; isFinal: boolean; correctAnswer?: string; }) => {
+      setLastAnswerResult(payload);
+      if (payload.isFinal) {
+        setQuestionState('result');
+        setActiveAnswerPlayerId(null);
+        setChoices([]);
+      }
+      console.log('[GameScreen] Answer result:', payload);
+    });
 
     // socket.on('scoreUpdated', (payload: { players: Player[] }) => {
     //   const newScores: { [playerId: string]: Player } = {};
@@ -189,20 +189,20 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
     //   console.log('[GameScreen] Game finished.');
     // });
 
-    // socket.on('pauseReading', () => {
-    //   setQuestionState('paused');
-    //   console.log('[GameScreen] Reading paused.');
-    // });
+    socket.on('pauseReading', () => {
+      setQuestionState('paused');
+      console.log('[GameScreen] Reading paused.');
+    });
 
     // socket.on('resumeReading', () => {
     //   setQuestionState('reading');
     //   console.log('[GameScreen] Reading resumed.');
     // });
 
-    // socket.on('pauseTimer', () => {
-    //   setQuestionState('paused');
-    //   console.log('[GameScreen] Timer paused.');
-    // });
+    socket.on('pauseTimer', () => {
+      setQuestionState('paused');
+      console.log('[GameScreen] Timer paused.');
+    });
 
     // socket.on('errorOccurred', ({ message }) => {
     //   console.error('[GameScreen] Error:', message);
@@ -213,43 +213,43 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       socket.off("newQuestion");
       socket.off("readingStarted");
       // --- フェーズ1以外はコメントアウト ---
-      // socket.off('timerStarted');
-      // socket.off('buzzerResult');
-      // socket.off('nextChoice');
-      // socket.off('answerResult');
-      // socket.off('scoreUpdated');
-      // socket.off('gameFinished');
-      // socket.off('pauseReading');
-      // socket.off('resumeReading');
-      // socket.off('pauseTimer');
-      // socket.off('errorOccurred');
+      socket.off('timerStarted');
+      socket.off('buzzerResult');
+      socket.off('nextChoice');
+      socket.off('answerResult');
+      socket.off('scoreUpdated');
+      socket.off('gameFinished');
+      socket.off('pauseReading');
+      socket.off('resumeReading');
+      socket.off('pauseTimer');
+      socket.off('errorOccurred');
     };
   }, []);
 
   // --- フェーズ1以外はコメントアウト ---
   // // タイマーのカウントダウン表示
-  // useEffect(() => {
-  //   if (questionState === 'timer_running' && timerRemaining > 0) {
-  //     const timer = setInterval(() => {
-  //       setTimerRemaining(prev => Math.max(0, prev - 1000));
-  //     }, 1000);
-  //     return () => clearInterval(timer);
-  //   }
-  // }, [questionState, timerRemaining]);
+  useEffect(() => {
+    if (questionState === 'timer_running' && timerRemaining > 0) {
+      const timer = setInterval(() => {
+        setTimerRemaining(prev => Math.max(0, prev - 1000));
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [questionState, timerRemaining]);
 
-  // const handleBuzz = () => {
-  //   if (socket && (questionState === 'reading' || questionState === 'timer_running')) {
-  //     socket.emit('buzz', { roomId: room.id });
-  //     console.log('[GameScreen] Buzz!');
-  //   }
-  // };
+  const handleBuzz = () => {
+    if (socket && (questionState === 'reading' || questionState === 'timer_running')) {
+      socket.emit('buzz', { roomId: room.id });
+      console.log('[GameScreen] Buzz!');
+    }
+  };
 
-  // const handleSubmitCharacter = (char: string) => {
-  //   if (socket && questionState === 'answering' && activeAnswerPlayerId === playerId) {
-  //     socket.emit('submitCharacter', { roomId: room.id, selectedChar: char });
-  //     console.log('[GameScreen] Submitted character:', char);
-  //   }
-  // };
+  const handleSubmitCharacter = (char: string) => {
+    if (socket && questionState === 'answering' && activeAnswerPlayerId === playerId) {
+      socket.emit('submitCharacter', { roomId: room.id, selectedChar: char });
+      console.log('[GameScreen] Submitted character:', char);
+    }
+  };
 
   return (
     <div className="game-screen">
@@ -284,30 +284,30 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
 
       {/* 早押しボタン */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {/* {(questionState === 'reading' || questionState === 'timer_running') && activeAnswerPlayerId === null && (
+      {(questionState === 'reading' || questionState === 'timer_running') && activeAnswerPlayerId === null && (
         <button onClick={handleBuzz}>早押し！</button>
-      )} */}
+      )}
 
       {/* タイマー表示 */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {/* {questionState === 'timer_running' && (
+      {questionState === 'timer_running' && (
         <p>Time Remaining: {Math.ceil(timerRemaining / 1000)}s</p>
-      )} */}
+      )}
 
       {/* 回答権表示 */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {/* {activeAnswerPlayerId && (
+      {activeAnswerPlayerId && (
         <p>
           {playersScores[activeAnswerPlayerId]?.name || 'Unknown Player'} が回答権を持っています。
           {activeAnswerPlayerId === playerId && (
             <span> (あなたの番です)</span>
           )}
         </p>
-      )} */}
+      )}
 
       {/* 選択肢表示 */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {/* {questionState === 'answering' && activeAnswerPlayerId === playerId && choices.length > 0 && (
+      {questionState === 'answering' && activeAnswerPlayerId === playerId && choices.length > 0 && (
         <div className="choices-area">
           {choices.map((char, index) => (
             <button key={index} onClick={() => handleSubmitCharacter(char)}>
@@ -315,7 +315,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
             </button>
           ))}
         </div>
-      )} */}
+      )}
 
       {/* 回答結果表示 */}
       {/* --- フェーズ1以外はコメントアウト --- */}

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Socket } from 'socket.io-client';
-import { Room, Question, Player } from '../types';
+import React, { useState, useEffect } from "react";
+import { Socket } from "socket.io-client";
+import { Room, Question, Player } from "../types";
 
 interface GameScreenProps {
   socket: Socket | null;
@@ -15,12 +15,15 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
   // Stateの初期値をnullまたは空のオブジェクトで設定し、useEffectでroomプロップから初期化する
   // これにより、コンポーネントの初回マウント時にroom.gameDataがundefinedでもエラーにならない
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
-  const [questionState, setQuestionState] = useState<Room['gameData']['questionState']>('idle'); // デフォルト値を'idle'に設定
+  const [questionState, setQuestionState] =
+    useState<Room["gameData"]["questionState"]>("idle"); // デフォルト値を'idle'に設定
   // フェーズ1: 問題読み上げ表示とtimerReadyイベントの自動送信
   // displayedQuestionText: 問題文の読み上げアニメーションで現在表示されているテキスト
-  const [displayedQuestionText, setDisplayedQuestionText] = useState<string>('');
+  const [displayedQuestionText, setDisplayedQuestionText] =
+    useState<string>("");
   // readingIndex: 問題文の読み上げアニメーションで現在何文字目まで表示したかを示すインデックス
   const [readingIndex, setReadingIndex] = useState<number>(0);
+  const [questionIndex, setQuestionIndex] = useState<number>(0);
 
   // --- フェーズ1以外はコメントアウト ---
   // const [activeAnswerPlayerId, setActiveAnswerPlayerId] = useState<string | null>(null);
@@ -34,12 +37,17 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
   // room.gameData.questionState, currentQuestion
   // をroomオブジェクトの変更に合わせて更新し、UIがバックエンドの状態に追従するようにする。
   useEffect(() => {
-    console.log('GameScreen: useEffectのたびに実行されて欲しい for room update, room:', room);
+    console.log(
+      "GameScreen: useEffectのたびに実行されて欲しい for room update, room:",
+      room
+    );
 
     // room.gameData が存在することを前提にstateを更新
     // もしroom.gameDataがundefinedの場合でも、?.と||で安全にデフォルト値が設定される
-    setQuestionState(room.gameData?.questionState || 'idle');
-    setCurrentQuestion(room.gameData?.questions?.[room.gameData.currentQuestionIndex] || null);
+    setQuestionState(room.gameData?.questionState || "idle");
+    setCurrentQuestion(
+      room.gameData?.questions?.[room.gameData.currentQuestionIndex] || null
+    );
     // --- フェーズ1以外はコメントアウト ---
     // setActiveAnswerPlayerId(room.gameData?.activeAnswer?.playerId || null);
     // setPlayersScores(room.players || {});
@@ -53,23 +61,36 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
   // questionStateが'reading'の場合、currentQuestion.textを一文字ずつ表示し、
   // 全て表示し終えたら自動的にtimerReadyイベントをサーバーに送信する。
   useEffect(() => {
-    console.log('[GameScreen]一文字表示のたびに表示されて欲しいuseEffect for reading animation, questionState:', questionState, 'currentQuestion:', currentQuestion);
+    console.log(
+      "[GameScreen]一文字表示のたびに表示されて欲しいuseEffect for reading animation, questionState:",
+      questionState,
+      "currentQuestion:",
+      currentQuestion
+    );
     let interval: NodeJS.Timeout | undefined;
     const READING_SPEED = 100; // 1文字表示する間隔（ミリ秒）
 
-    if (questionState === 'reading' && currentQuestion && readingIndex < currentQuestion.text.length) {
+    if (
+      questionState === "reading" &&
+      currentQuestion &&
+      readingIndex < currentQuestion.text.length
+    ) {
       interval = setInterval(() => {
-        setReadingIndex(prevIndex => {
+        setReadingIndex((prevIndex) => {
           const nextIndex = prevIndex + 1;
           if (currentQuestion) {
-            setDisplayedQuestionText(currentQuestion.text.substring(0, nextIndex));
+            setDisplayedQuestionText(
+              currentQuestion.text.substring(0, nextIndex)
+            );
           }
 
           if (currentQuestion && nextIndex >= currentQuestion.text.length) {
             clearInterval(interval);
             if (socket) {
-              socket.emit('timerReady', { roomId: room.id });
-              console.log('[GameScreen] 読み上げし終わったら表示されて欲しいReading complete, sent timerReady.');
+              socket.emit("timerReady", { roomId: room.id });
+              console.log(
+                "[GameScreen] 読み上げし終わったら表示されて欲しいReading complete, sent timerReady."
+              );
             }
           }
           return nextIndex;
@@ -92,29 +113,38 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
 
     socket.onAny((eventName, ...args) => {
       console.log(`イベントを受信しました: ${eventName}`);
-      console.log('ペイロード:', args);
+      console.log("ペイロード:", args);
     });
 
-    socket.on('newQuestion', (payload: { question: Question; questionIndex: number; room: Room }) => {
-      console.log('[GameScreen] New questionを検知した時に実行されてほしい received:', payload.question);
-      setCurrentQuestion(payload.question);
-      setQuestionState('presenting');
-      // --- フェーズ1以外はコメントアウト ---
-      // setActiveAnswerPlayerId(null);
-      // setChoices([]);
-      // setTimerRemaining(0);
-      // setLastAnswerResult(null);
-      // setPlayersScores(payload.room.players);
-      // フェーズ1: 新しい問題が来た際に読み上げ関連のstateをリセット
-      setDisplayedQuestionText(''); // 表示中の問題文をリセット
-      setReadingIndex(0); // リセット
-    });
+    socket.on(
+      "newQuestion",
+      (payload: { question: Question; questionIndex: number; room: Room }) => {
+        console.log(
+          "[GameScreen] New questionを検知した時に実行されてほしい received:",
+          payload.question
+        );
+        setCurrentQuestion(payload.question);
+        setQuestionState("presenting");
+        // --- フェーズ1以外はコメントアウト ---
+        // setActiveAnswerPlayerId(null);
+        // setChoices([]);
+        // setTimerRemaining(0);
+        // setLastAnswerResult(null);
+        // setPlayersScores(payload.room.players);
+        // フェーズ1: 新しい問題が来た際に読み上げ関連のstateをリセット
+        setDisplayedQuestionText(""); // 表示中の問題文をリセット
+        setReadingIndex(0); // リセット
+        setQuestionIndex(payload.questionIndex);
+      }
+    );
 
-    socket.on('readingStarted', (payload: { room: Room }) => {
-      setQuestionState('reading');
+    socket.on("readingStarted", (payload: { room: Room }) => {
+      setQuestionState("reading");
       // --- フェーズ1以外はコメントアウト ---
       // setPlayersScores(payload.room.players);
-      console.log('[GameScreen] 読み上げを開始する時に実行されて欲しいReading started.');
+      console.log(
+        "[GameScreen] 読み上げを開始する時に実行されて欲しいReading started."
+      );
     });
 
     // --- フェーズ1以外はコメントアウト ---
@@ -180,8 +210,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
     // });
 
     return () => {
-      socket.off('newQuestion');
-      socket.off('readingStarted');
+      socket.off("newQuestion");
+      socket.off("readingStarted");
       // --- フェーズ1以外はコメントアウト ---
       // socket.off('timerStarted');
       // socket.off('buzzerResult');
@@ -242,9 +272,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       {/* 問題表示エリア */}
       {currentQuestion && (
         <div className="question-area">
-          <h3>Question {room.gameData?.currentQuestionIndex + 1 || 1}:</h3>
+          <h3>Question {questionIndex + 1}:</h3>
           {/* フェーズ1: questionStateに応じて問題表示を切り替える */}
-          {questionState === 'presenting' ? (
+          {questionState === "presenting" ? (
             <p className="question-text">次の問題が始まります...</p>
           ) : (
             <p className="question-text">{displayedQuestionText}</p>

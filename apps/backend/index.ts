@@ -307,7 +307,7 @@ io.on('connection', (socket) => {
         room.gameData.answeredPlayerIds.push(socket.id);
         console.log(`[ANSWERED] プレイヤー '${state.players[socket.id].name}' が解答権を失いました。`);
       }
-      if(room.players[socket.id].score > 0) {
+      if (room.players[socket.id].score > 0) {
         console.log(`[SCORE_DEDUCT] プレイヤー '${state.players[socket.id].name}' のスコアを10点減点します。`);
         room.players[socket.id].score -= 10;
         io.to(roomId).emit('scoreUpdated', { players: Object.values(room.players) });
@@ -318,7 +318,8 @@ io.on('connection', (socket) => {
       if (room.gameData.answeredPlayerIds.length >= activePlayerCount) {
         console.log(`[ALL_INCORRECT] 全員が誤答しました。問題 [${currentQuestion.id}] を終了します。`);
         if (room.gameData.timeoutId) clearTimeout(room.gameData.timeoutId);
-        io.to(roomId).emit('answerResult', { isCorrect: false, isFinal: true });
+        const correctAnswer = currentQuestion.answer_data.map(d => d.char).join('');
+        io.to(roomId).emit('answerResult', { playerId: socket.id, isCorrect: false, isFinal: true, correctAnswer: correctAnswer });
         room.gameData.currentQuestionIndex++;
         setTimeout(() => startQuestionLifecycle(roomId), 3000);
         return; // 復帰処理は行わず終了
@@ -469,7 +470,10 @@ const startTimer = (roomId: string, duration: number) => {
     if (!room || room.gameData.questionState !== 'timer_running') return;
 
     console.log(`[TIMEOUT] ルーム [${roomId}] で時間切れになりました。`);
-    io.to(roomId).emit('answerResult', { isCorrect: false, isFinal: true });
+    const { activeAnswer, currentQuestionIndex, questions } = room.gameData;
+    const currentQuestion = questions[currentQuestionIndex];
+    const correctAnswer = currentQuestion.answer_data.map(d => d.char).join('');
+    io.to(roomId).emit('answerResult', { isCorrect: false, isFinal: true, correctAnswer: correctAnswer });
 
     room.gameData.currentQuestionIndex++;
     setTimeout(() => startQuestionLifecycle(roomId), 3000);

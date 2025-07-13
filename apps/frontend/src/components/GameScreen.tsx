@@ -387,6 +387,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
             <p style={{ color: "green" }}>正解！</p>
           ) : (
             lastAnswerResult.isFinal && <p style={{ color: "red" }}>不正解！</p>
+            
           )}
           {lastAnswerResult.isFinal && lastAnswerResult.correctAnswer && (
             <p>正解は: {lastAnswerResult.correctAnswer}</p>

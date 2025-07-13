@@ -83,6 +83,7 @@ function App() {
 
   const handleGameStarted = (room: Room) => { // room の型も Room に変更
     setCurrentRoom(room);
+    console.log('App.tsx: room after gameStarted:', room);
     console.log('App.tsx rendering GameScreen with room:', currentRoom);
   };
 

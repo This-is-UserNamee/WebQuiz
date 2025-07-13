@@ -237,10 +237,10 @@ io.on('connection', (socket) => {
     const currentState = room?.gameData.questionState;
     // 早押し可能か検証 (読上中 or タイマー作動中か、回答権を持つ人がいないか)
     if (!room || !room.players[socket.id] || (currentState !== 'reading' && currentState !== 'timer_running') || room.gameData.activeAnswer !== null) return;
-    
+
     // 中断処理のために、現在がどのフェーズだったかを保存
     room.gameData.prePauseState = currentState;
-    
+
     // フェーズに応じて中断処理を実行
     if (currentState === 'reading') {
       io.to(roomId).emit('pauseReading', { room: room });
@@ -260,7 +260,7 @@ io.on('connection', (socket) => {
     room.gameData.activeAnswer = { playerId: socket.id, currentAnswerIndex: 0 };
     console.log(`[BUZZ] プレイヤー '${state.players[socket.id].name}' が回答権を獲得。`);
     io.to(roomId).emit('buzzerResult', { winnerId: socket.id, room: room });
-    
+
     // 回答者に最初の選択肢を送信
     const currentQuestion = room.gameData.questions[room.gameData.currentQuestionIndex];
     const firstChoice = currentQuestion.answer_data[0].choices;
@@ -301,7 +301,7 @@ io.on('connection', (socket) => {
       // 不正解の場合
       console.log(`[INCORRECT] プレイヤー '${state.players[socket.id].name}' が誤答しました。`);
       io.to(roomId).emit('answerResult', { playerId: socket.id, isCorrect: false, isFinal: false });
-      
+
       room.gameData.activeAnswer = null; // 回答権をリセット
       if (!room.gameData.answeredPlayerIds.includes(socket.id)) {
         room.gameData.answeredPlayerIds.push(socket.id);
@@ -362,7 +362,7 @@ const handlePlayerLeave = (socketId: string, roomId: string, isDisconnect = fals
     // ホストが退出した場合、ルームを解散
     console.log(`[ROOM_CLOSE] ホストの${action}により、ルーム [${roomId}] を解散します。`);
     io.to(roomId).emit('roomClosed', { roomId: roomId, reason: `ホストが${action}しました。` });
-    
+
     Object.keys(room.players).forEach(playerId => {
       const playerSocket = io.sockets.sockets.get(playerId);
       if (playerSocket) playerSocket.leave(roomId);
@@ -371,7 +371,7 @@ const handlePlayerLeave = (socketId: string, roomId: string, isDisconnect = fals
   } else {
     // ゲストが退出した場合
     delete room.players[socketId];
-    if(!isDisconnect) {
+    if (!isDisconnect) {
       const playerSocket = io.sockets.sockets.get(socketId);
       if (playerSocket) playerSocket.leave(roomId);
     }
@@ -395,6 +395,7 @@ const generateRoomId = (): string => Math.random().toString(36).substring(2, 7);
 
 /** クイズ1問のライフサイクルを開始・進行させる */
 const startQuestionLifecycle = (roomId: string) => {
+  console.log(`[QUESTION_LIFECYCLE] ルーム [${roomId}] の問題ライフサイクルを開始します。`);
   const room = state.rooms[roomId];
   if (!room) return;
 
@@ -427,9 +428,12 @@ const startQuestionLifecycle = (roomId: string) => {
   room.gameData.remainingTime = 0;
   if (room.gameData.timeoutId) clearTimeout(room.gameData.timeoutId);
 
-  const currentQuestion = room.gameData.questions[room.gameData.currentQuestionIndex];
-  io.to(roomId).emit('newQuestion', { question: currentQuestion, questionIndex: room.gameData.currentQuestionIndex, room: room });
-  console.log(`[QUESTION] ルーム [${roomId}] で問題 ${room.gameData.currentQuestionIndex + 1} を提示`);
+  setTimeout(() => {
+    const room = state.rooms[roomId];
+    const currentQuestion = room.gameData.questions[room.gameData.currentQuestionIndex];
+    io.to(roomId).emit('newQuestion', { question: currentQuestion, questionIndex: room.gameData.currentQuestionIndex, room: room });
+    console.log(`[QUESTION] ルーム [${roomId}] で問題 ${room.gameData.currentQuestionIndex + 1} を提示`);
+  }, 1000); // 1秒後に問題を提示
 
   // 3秒の「タメ」の後、読み上げフェーズへ
   setTimeout(() => {
@@ -458,7 +462,7 @@ const startTimer = (roomId: string, duration: number) => {
 
     console.log(`[TIMEOUT] ルーム [${roomId}] で時間切れになりました。`);
     io.to(roomId).emit('answerResult', { isCorrect: false, isFinal: true });
-    
+
     room.gameData.currentQuestionIndex++;
     setTimeout(() => startQuestionLifecycle(roomId), 3000);
   }, duration);

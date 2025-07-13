@@ -4,10 +4,9 @@ import RegisterPlayer from "./components/RegisterPlayer";
 import Lobby from "./components/Lobby";
 import RoomWaiting from "./components/RoomWaiting";
 import GameScreen from "./components/GameScreen";
+import Result from "./components/Result";
 import { Room } from "./types"; // Room 型をインポート
 import "./App.css";
-import Result from "./components/Result";
-
 // バックエンドのURLを環境変数から取得
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 

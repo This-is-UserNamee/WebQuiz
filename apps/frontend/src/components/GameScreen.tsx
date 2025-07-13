@@ -267,6 +267,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
   }, [questionState, timerRemaining]);
 
   useEffect(() => {
+    // 回答中でない場合は、answeringTimerのintervalを作成しない
+    if (questionState !== "answering" || activeAnswerPlayerId !== playerId) {
+      return;
+    }
+
     const timer = setInterval(() => {
       setAnsweringTimer((prev) => {
         const newTimer = Math.max(0, prev - 1);
@@ -281,7 +286,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [answeringTimer]);
+  }, [socket, activeAnswerPlayerId, playerId, room.id, questionState]);
 
   const handleBuzz = () => {
     if (

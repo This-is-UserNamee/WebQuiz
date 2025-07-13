@@ -64,6 +64,11 @@ function App() {
       }
     });
 
+    newSocket.on("gameFinished", (payload: any) => {
+      setCurrentRoom(payload.room);
+      console.log("[DEBUG_APP_EVENT] gameFinished payload:", payload);
+    });
+
     setSocket(newSocket);
 
     return () => {
@@ -120,8 +125,14 @@ function App() {
           onLeaveRoom={handleLeaveRoom}
           onGameStarted={handleGameStarted}
         />
-      ) : (
+      ) : currentRoom.state === "playing" ? (
         <GameScreen socket={socket} room={currentRoom} playerId={playerId} />
+      ) : (
+        <div>
+          <h2>Unknown Room State</h2>
+          <p>Current room state: {currentRoom.state}</p>
+          <button onClick={handleLeaveRoom}>Leave Room</button>
+        </div>
       )}
     </div>
   );

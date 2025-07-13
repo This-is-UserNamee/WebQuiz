@@ -213,10 +213,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       console.log("[GameScreen] Scores updated:", newScores);
     });
 
-    socket.on("gameFinished", (payload: { room: Room }) => {
-      setPlayersScores(payload.room.players);
-      console.log("[GameScreen] Game finished.");
-    });
+    // socket.on("gameFinished", (payload: { room: Room }) => {
+    //   setPlayersScores(payload.room.players);
+    //   console.log("[GameScreen] Game finished.");
+    // });
 
     socket.on("pauseReading", () => {
       setQuestionState("paused");
@@ -247,7 +247,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       socket.off("nextChoice");
       socket.off("answerResult");
       socket.off("scoreUpdated");
-      socket.off("gameFinished");
+      // socket.off("gameFinished");
       socket.off("pauseReading");
       socket.off("resumeReading");
       socket.off("pauseTimer");

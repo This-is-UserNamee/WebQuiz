@@ -6,6 +6,7 @@ import RoomWaiting from "./components/RoomWaiting";
 import GameScreen from "./components/GameScreen";
 import { Room } from "./types"; // Room 型をインポート
 import "./App.css";
+import Result from "./components/Result";
 
 // バックエンドのURLを環境変数から取得
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
@@ -128,11 +129,7 @@ function App() {
       ) : currentRoom.state === "playing" ? (
         <GameScreen socket={socket} room={currentRoom} playerId={playerId} />
       ) : (
-        <div>
-          <h2>Unknown Room State</h2>
-          <p>Current room state: {currentRoom.state}</p>
-          <button onClick={handleLeaveRoom}>Leave Room</button>
-        </div>
+        <Result room={currentRoom} />
       )}
     </div>
   );

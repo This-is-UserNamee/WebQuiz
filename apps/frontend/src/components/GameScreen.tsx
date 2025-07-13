@@ -26,11 +26,21 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
   const [questionIndex, setQuestionIndex] = useState<number>(0);
 
   //--- フェーズ1以外はコメントアウト ---
-  const [activeAnswerPlayerId, setActiveAnswerPlayerId] = useState<string | null>(null);
+  const [activeAnswerPlayerId, setActiveAnswerPlayerId] = useState<
+    string | null
+  >(null);
   const [choices, setChoices] = useState<string[]>([]);
   const [timerRemaining, setTimerRemaining] = useState<number>(0);
-  const [playersScores, setPlayersScores] = useState<{ [playerId: string]: Player }>({});
-  const [lastAnswerResult, setLastAnswerResult] = useState<{ playerId?: string; isCorrect: boolean; isFinal: boolean; correctAnswer?: string; } | null>(null);
+  const [playersScores, setPlayersScores] = useState<{
+    [playerId: string]: Player;
+  }>({});
+  const [lastAnswerResult, setLastAnswerResult] = useState<{
+    playerId?: string;
+    isCorrect: boolean;
+    isFinal: boolean;
+    correctAnswer?: string;
+  } | null>(null);
+  const [answeringTimer, setAnsweringTimer] = useState<number>(5); // 回答時間の初期値を5秒に設定
 
   // roomオブジェクトの変更を監視し、questionStateなどを同期
   // フェーズ1: questionStateの同期強化
@@ -51,7 +61,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
     // --- フェーズ1以外はコメントアウト ---
     setActiveAnswerPlayerId(room.gameData?.activeAnswer?.playerId || null);
     setPlayersScores(room.players || {});
-    if (room.gameData?.questionState === 'timer_running' && room.gameData.remainingTime > 0) {
+    if (
+      room.gameData?.questionState === "timer_running" &&
+      room.gameData.remainingTime > 0
+    ) {
       setTimerRemaining(room.gameData.remainingTime);
     }
   }, [room]); // roomプロップが変更されたときにこのuseEffectが再実行される
@@ -148,71 +161,80 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
     });
 
     // --- フェーズ1以外はコメントアウト ---
-    socket.on('timerStarted', (payload: { room: Room; duration: number }) => {
-      setQuestionState('timer_running');
+    socket.on("timerStarted", (payload: { room: Room; duration: number }) => {
+      setQuestionState("timer_running");
       setTimerRemaining(payload.duration);
       setPlayersScores(payload.room.players);
-      console.log('[GameScreen] Timer started for', payload.duration / 1000, 'seconds.');
+      console.log(
+        "[GameScreen] Timer started for",
+        payload.duration / 1000,
+        "seconds."
+      );
     });
 
-    socket.on('buzzerResult', (payload: { winnerId: string; room: Room }) => {
-      setQuestionState('answering');
+    socket.on("buzzerResult", (payload: { winnerId: string; room: Room }) => {
+      setQuestionState("answering");
       setActiveAnswerPlayerId(payload.winnerId);
       setPlayersScores(payload.room.players);
-      console.log('[GameScreen] Buzzer result. Winner:', payload.winnerId);
+      console.log("[GameScreen] Buzzer result. Winner:", payload.winnerId);
     });
 
-    socket.on('nextChoice', (payload: { choices: string[] }) => {
+    socket.on("nextChoice", (payload: { choices: string[] }) => {
       setChoices(payload.choices);
-      console.log('[GameScreen] Next choices:', payload.choices);
-      setTimeout(() => {
-        console.log('[GameScreen] 自動的に誤答を送信します。');
-        handleSubmitCharacter('-1'); // 自動的に誤答を送信
-      }, 5000); // 5秒後に自動的に誤答を送信
-    })
-
-    socket.on('answerResult', (payload: { playerId?: string; isCorrect: boolean; isFinal: boolean; correctAnswer?: string; }) => {
-      setLastAnswerResult(payload);
-      if (!payload.isCorrect && !payload.isFinal) {
-        setActiveAnswerPlayerId(null);
-      }
-      if (payload.isFinal) {
-        setQuestionState('result');
-        setActiveAnswerPlayerId(null);
-        setChoices([]);
-      }
-      console.log('[GameScreen] Answer result:', payload);
+      setAnsweringTimer(5);
+      console.log("[GameScreen] Next choices:", payload.choices);
     });
 
-    socket.on('scoreUpdated', (payload: { players: Player[] }) => {
+    socket.on(
+      "answerResult",
+      (payload: {
+        playerId?: string;
+        isCorrect: boolean;
+        isFinal: boolean;
+        correctAnswer?: string;
+      }) => {
+        setLastAnswerResult(payload);
+        if (!payload.isCorrect && !payload.isFinal) {
+          setActiveAnswerPlayerId(null);
+        }
+        if (payload.isFinal) {
+          setQuestionState("result");
+          setActiveAnswerPlayerId(null);
+          setChoices([]);
+        }
+        console.log("[GameScreen] Answer result:", payload);
+      }
+    );
+
+    socket.on("scoreUpdated", (payload: { players: Player[] }) => {
       const newScores: { [playerId: string]: Player } = {};
-      payload.players.forEach(p => newScores[p.id] = p);
+      payload.players.forEach((p) => (newScores[p.id] = p));
       setPlayersScores(newScores);
-      console.log('[GameScreen] Scores updated:', newScores);
+      console.log("[GameScreen] Scores updated:", newScores);
     });
 
-    socket.on('gameFinished', (payload: { room: Room }) => {
+    socket.on("gameFinished", (payload: { room: Room }) => {
       setPlayersScores(payload.room.players);
-      console.log('[GameScreen] Game finished.');
+      console.log("[GameScreen] Game finished.");
     });
 
-    socket.on('pauseReading', () => {
-      setQuestionState('paused');
-      console.log('[GameScreen] Reading paused.');
+    socket.on("pauseReading", () => {
+      setQuestionState("paused");
+      console.log("[GameScreen] Reading paused.");
     });
 
-    socket.on('resumeReading', () => {
-      setQuestionState('reading');
-      console.log('[GameScreen] Reading resumed.');
+    socket.on("resumeReading", () => {
+      setQuestionState("reading");
+      console.log("[GameScreen] Reading resumed.");
     });
 
-    socket.on('pauseTimer', () => {
-      setQuestionState('paused');
-      console.log('[GameScreen] Timer paused.');
+    socket.on("pauseTimer", () => {
+      setQuestionState("paused");
+      console.log("[GameScreen] Timer paused.");
     });
 
-    socket.on('errorOccurred', ({ message }) => {
-      console.error('[GameScreen] Error:', message);
+    socket.on("errorOccurred", ({ message }) => {
+      console.error("[GameScreen] Error:", message);
       alert(`Error: ${message}`);
     });
 
@@ -220,41 +242,65 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       socket.off("newQuestion");
       socket.off("readingStarted");
       // --- フェーズ1以外はコメントアウト ---
-      socket.off('timerStarted');
-      socket.off('buzzerResult');
-      socket.off('nextChoice');
-      socket.off('answerResult');
-      socket.off('scoreUpdated');
-      socket.off('gameFinished');
-      socket.off('pauseReading');
-      socket.off('resumeReading');
-      socket.off('pauseTimer');
-      socket.off('errorOccurred');
+      socket.off("timerStarted");
+      socket.off("buzzerResult");
+      socket.off("nextChoice");
+      socket.off("answerResult");
+      socket.off("scoreUpdated");
+      socket.off("gameFinished");
+      socket.off("pauseReading");
+      socket.off("resumeReading");
+      socket.off("pauseTimer");
+      socket.off("errorOccurred");
     };
   }, []);
 
   // --- フェーズ1以外はコメントアウト ---
   // // タイマーのカウントダウン表示
   useEffect(() => {
-    if (questionState === 'timer_running' && timerRemaining > 0) {
+    if (questionState === "timer_running" && timerRemaining > 0) {
       const timer = setInterval(() => {
-        setTimerRemaining(prev => Math.max(0, prev - 1000));
+        setTimerRemaining((prev) => Math.max(0, prev - 1000));
       }, 1000);
       return () => clearInterval(timer);
     }
   }, [questionState, timerRemaining]);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setAnsweringTimer((prev) => {
+        const newTimer = Math.max(0, prev - 1);
+        if (newTimer === 0 && socket && activeAnswerPlayerId === playerId) {
+          console.log("[GameScreen] 自動的に誤答を送信します。");
+          socket.emit("submitCharacter", {
+            roomId: room.id,
+            selectedChar: "-1",
+          });
+        }
+        return newTimer;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [answeringTimer]);
+
   const handleBuzz = () => {
-    if (socket && (questionState === 'reading' || questionState === 'timer_running')) {
-      socket.emit('buzz', { roomId: room.id });
-      console.log('[GameScreen] Buzz!');
+    if (
+      socket &&
+      (questionState === "reading" || questionState === "timer_running")
+    ) {
+      socket.emit("buzz", { roomId: room.id });
+      console.log("[GameScreen] Buzz!");
     }
   };
 
   const handleSubmitCharacter = (char: string) => {
-    if (socket && questionState === 'answering' && activeAnswerPlayerId === playerId) {
-      socket.emit('submitCharacter', { roomId: room.id, selectedChar: char });
-      console.log('[GameScreen] Submitted character:', char);
+    if (
+      socket &&
+      questionState === "answering" &&
+      activeAnswerPlayerId === playerId
+    ) {
+      socket.emit("submitCharacter", { roomId: room.id, selectedChar: char });
+      console.log("[GameScreen] Submitted character:", char);
     }
   };
 
@@ -268,9 +314,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       <div className="players-score">
         <h3>Players:</h3>
         <ul>
-          {Object.values(playersScores).map(player => (
+          {Object.values(playersScores).map((player) => (
             <li key={player.id}>
-              {player.name} {player.id === playerId ? '(You)' : ''}: {player.score} points
+              {player.name} {player.id === playerId ? "(You)" : ""}:{" "}
+              {player.score} points
             </li>
           ))}
         </ul>
@@ -291,13 +338,14 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
 
       {/* 早押しボタン */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {(questionState === 'reading' || questionState === 'timer_running') && activeAnswerPlayerId === null && (
-        <button onClick={handleBuzz}>早押し！</button>
-      )}
+      {(questionState === "reading" || questionState === "timer_running") &&
+        activeAnswerPlayerId === null && (
+          <button onClick={handleBuzz}>早押し！</button>
+        )}
 
       {/* タイマー表示 */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {questionState === 'timer_running' && (
+      {questionState === "timer_running" && (
         <p>Time Remaining: {Math.ceil(timerRemaining / 1000)}s</p>
       )}
 
@@ -305,35 +353,35 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       {/* --- フェーズ1以外はコメントアウト --- */}
       {activeAnswerPlayerId && (
         <p>
-          {playersScores[activeAnswerPlayerId]?.name || 'Unknown Player'} が回答権を持っています。
-          {activeAnswerPlayerId === playerId && (
-            <span> (あなたの番です)</span>
-          )}
+          {playersScores[activeAnswerPlayerId]?.name || "Unknown Player"}{" "}
+          が回答権を持っています。
+          {activeAnswerPlayerId === playerId && <span> (あなたの番です)</span>}
         </p>
       )}
 
       {/* 選択肢表示 */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {questionState === 'answering' && activeAnswerPlayerId === playerId && choices.length > 0 && (
-        <div className="choices-area">
-          {choices.map((char, index) => (
-            <button key={index} onClick={() => handleSubmitCharacter(char)}>
-              {char}
-            </button>
-          ))}
-        </div>
-      )}
+      {questionState === "answering" &&
+        activeAnswerPlayerId === playerId &&
+        choices.length > 0 && (
+          <div className="choices-area">
+            <p>{answeringTimer}</p>
+            {choices.map((char, index) => (
+              <button key={index} onClick={() => handleSubmitCharacter(char)}>
+                {char}
+              </button>
+            ))}
+          </div>
+        )}
 
       {/* 回答結果表示 */}
       {/* --- フェーズ1以外はコメントアウト --- */}
       {lastAnswerResult && (
         <div className="answer-result">
           {lastAnswerResult.isCorrect ? (
-            <p style={{ color: 'green' }}>正解！</p>
+            <p style={{ color: "green" }}>正解！</p>
           ) : (
-            lastAnswerResult.isFinal && (
-              <p style={{ color: "red" }}>不正解！</p>
-            )
+            lastAnswerResult.isFinal && <p style={{ color: "red" }}>不正解！</p>
           )}
           {lastAnswerResult.isFinal && lastAnswerResult.correctAnswer && (
             <p>正解は: {lastAnswerResult.correctAnswer}</p>
@@ -343,14 +391,18 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
 
       {/* ゲーム終了時の表示 */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {room.state === 'finished' && (
+      {room.state === "finished" && (
         <div>
           <h3>ゲーム終了！</h3>
           <p>最終スコア:</p>
           <ul>
-            {Object.values(playersScores).sort((a, b) => b.score - a.score).map(player => (
-              <li key={player.id}>{player.name}: {player.score} points</li>
-            ))}
+            {Object.values(playersScores)
+              .sort((a, b) => b.score - a.score)
+              .map((player) => (
+                <li key={player.id}>
+                  {player.name}: {player.score} points
+                </li>
+              ))}
           </ul>
         </div>
       )}

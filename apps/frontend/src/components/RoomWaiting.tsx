@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Socket } from "socket.io-client";
-import { Room } from "../types";
+import { Room } from "../util/types";
 
 interface RoomWaitingProps {
   socket: Socket | null;

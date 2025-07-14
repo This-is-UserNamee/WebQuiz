@@ -1,0 +1,49 @@
+.topContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-lll);
+  padding: var(--sp-lll) 0;
+  color: var(--bc-bg);
+}
+
+.icon {
+  width: 20rem;
+}
+
+.topText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+}
+
+.topTitle {
+  line-height: 1;
+  font-size: 9rem;
+}
+
+.topBorder {
+  height: 5px;
+  background-color: var(--bc-bg);
+  border-radius: 500px;
+}
+
+.welcomeText {
+  color: var(--bc-section);
+  font-size: 2rem;
+}
+
+.inputForm {
+  display: flex;
+  gap: var(--sp-lll);
+  margin: var(--sp-ll) 0;
+}
+
+.input {
+  flex: 1;
+  font-size: 1.5rem;
+  padding: var(--sp-m);
+  border-radius: 5px;
+  border: 1px solid var(--bc-primary);
+}

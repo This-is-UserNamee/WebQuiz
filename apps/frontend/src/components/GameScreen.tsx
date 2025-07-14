@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Socket } from "socket.io-client";
-import { Room, Question, Player } from "../types";
+import { Room, Question, Player } from "../util/types";
 
 interface GameScreenProps {
   socket: Socket | null;
@@ -387,7 +387,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
             <p style={{ color: "green" }}>正解！</p>
           ) : (
             lastAnswerResult.isFinal && <p style={{ color: "red" }}>不正解！</p>
-            
           )}
           {lastAnswerResult.isFinal && lastAnswerResult.correctAnswer && (
             <p>正解は: {lastAnswerResult.correctAnswer}</p>

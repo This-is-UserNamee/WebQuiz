@@ -1,5 +1,5 @@
 import React from "react";
-import { Room } from "../types";
+import { Room } from "../util/types";
 
 const Result = ({ room }: { room: Room }) => {
   const players = Object.values(room.players).sort((a, b) => b.score - a.score);

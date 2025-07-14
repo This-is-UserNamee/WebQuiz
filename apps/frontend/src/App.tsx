@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
-import RegisterPlayer from "./components/RegisterPlayer";
+import RegisterPlayer from "./components/RegisterPlayer/RegisterPlayer";
 import Lobby from "./components/Lobby";
 import RoomWaiting from "./components/RoomWaiting";
 import GameScreen from "./components/GameScreen";
 import Result from "./components/Result";
-import { Room } from "./types"; // Room 型をインポート
+import { Room } from "./util/types"; // Room 型をインポート
 import "./App.css";
 // バックエンドのURLを環境変数から取得
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
@@ -102,12 +102,6 @@ function App() {
 
   return (
     <div className="App">
-      <h1>WebQuiz Frontend</h1>
-      <p>
-        Socket.IO Connection Status:{" "}
-        {isConnected ? "Connected" : "Disconnected"}
-      </p>
-
       {!playerId ? (
         <RegisterPlayer socket={socket} onRegistered={handlePlayerRegistered} />
       ) : !currentRoom ? (

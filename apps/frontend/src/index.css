@@ -19,6 +19,7 @@ body {
   --bc-accent: #ffea00;
   --bc-bg: #ffffff;
   --bc-shadow: #00000040;
+  --bc-dissable: #b0bec5;
 
   --sp-lll: 100px;
   --sp-ll: 50px;
@@ -35,6 +36,11 @@ body {
   --sh-ce: 0px 0px 10px var(--bc-shadow);
   --sh-bg: 0 4px 20px var(--bc-shadow);
   --sh-bg-hv: 0 4px 20px var(--bc-primary);
+
+  --rd-s: 0.25rem;
+  --rd-m: 0.5rem;
+  --rd-l: 1rem;
+  --rd-xl: 2rem;
 }
 
 button {

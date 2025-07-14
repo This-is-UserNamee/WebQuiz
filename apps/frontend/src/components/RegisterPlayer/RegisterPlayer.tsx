@@ -71,9 +71,7 @@ const RegisterPlayer: React.FC<RegisterPlayerProps> = ({
             onChange={(e) => setPlayerName(e.target.value)}
             className={styles.input}
           />
-          <CommonButton type="submit"
-            
-          >登録</CommonButton>
+          <CommonButton type="submit">登録</CommonButton>
         </form>
         {error && <p style={{ color: "red" }}>{error}</p>}
       </CommonSection>

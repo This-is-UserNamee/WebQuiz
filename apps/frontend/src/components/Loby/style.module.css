@@ -1,0 +1,22 @@
+.roomContainer {
+  display: flex;
+  align-items: start;
+}
+
+.createButton {
+  position: sticky;
+  top: var(--sp-l);
+  font-size: 2.5rem;
+  padding: 20vh var(--sp-ll);
+  background-color: var(--bc-primary);
+  color: var(--bc-bg);
+  border-radius: 0 var(--rd-l) var(--rd-l) 0;
+}
+
+.roomList {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: var(--sp-m);
+  padding: var(--sp-l);
+}

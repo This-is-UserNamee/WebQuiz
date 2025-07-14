@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
 import RegisterPlayer from "./components/RegisterPlayer/RegisterPlayer";
-import Lobby from "./components/Lobby";
+import Lobby from "./components/Loby/Lobby";
 import RoomWaiting from "./components/RoomWaiting";
 import GameScreen from "./components/GameScreen";
 import Result from "./components/Result";

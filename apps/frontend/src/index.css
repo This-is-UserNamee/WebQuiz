@@ -21,6 +21,7 @@ body {
   --bc-bg: #ffffff;
   --bc-shadow: #00000040;
   --bc-dissable: #b0bec5;
+  --bc-error: #ff5252;
 
   --sp-lll: 100px;
   --sp-ll: 50px;

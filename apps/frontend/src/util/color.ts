@@ -7,7 +7,8 @@ export type ColorType =
   | "text"
   | "subtext"
   | "accent"
-  | "bg";
+  | "bg"
+  | "error";
 
 export const ct2css = (color: ColorType) => {
   return `var(--bc-${color})`;

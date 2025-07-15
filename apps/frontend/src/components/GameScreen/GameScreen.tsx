@@ -5,7 +5,12 @@ import styles from "./style.module.css";
 import CommonSection from "../CommonSection";
 import GuageBar from "../GuageBar";
 import PlayerCard from "../PlayerCard";
-import { div } from "motion/react-client";
+import { div, p } from "motion/react-client";
+import CommonModal from "../CommonModal";
+import { IoMdClose } from "react-icons/io";
+import { ct2css } from "../../util/color";
+import { FaRegCircle } from "react-icons/fa";
+import { motion } from "motion/react";
 
 interface GameScreenProps {
   socket: Socket | null;
@@ -149,7 +154,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
         // --- フェーズ1以外はコメントアウト ---
         setActiveAnswerPlayerId(null);
         setChoices([]);
-        setTimerRemaining(0);
+        setTimerRemaining(Infinity);
         setLastAnswerResult(null);
         setPlayersScores(payload.room.players);
         // フェーズ1: 新しい問題が来た際に読み上げ関連のstateをリセット
@@ -340,50 +345,94 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
               </GuageBar>
 
               {/* 回答権表示 */}
-              {activeAnswerPlayerId && (
-                <p>
-                  {playersScores[activeAnswerPlayerId]?.name ||
-                    "Unknown Player"}{" "}
-                  が回答権を持っています。
-                  {activeAnswerPlayerId === playerId && (
-                    <span> (あなたの番です)</span>
-                  )}
+              <CommonModal
+                open={
+                  Boolean(activeAnswerPlayerId) &&
+                  activeAnswerPlayerId !== playerId
+                }
+              >
+                <p className={styles.answeringText}>
+                  <span className={styles.answeringPlayerName}>
+                    {playersScores[activeAnswerPlayerId || ""]?.name ||
+                      "Unknown Player"}{" "}
+                  </span>
+                  が回答権を持っています！！
                 </p>
-              )}
+              </CommonModal>
 
               {/* 回答結果表示 */}
-              {lastAnswerResult && (
-                <div className="answer-result">
-                  {lastAnswerResult.isCorrect ? (
-                    <p style={{ color: "green" }}>正解！</p>
+              <CommonModal
+                open={Boolean(
+                  lastAnswerResult &&
+                    lastAnswerResult.isFinal &&
+                    lastAnswerResult.correctAnswer
+                )}
+              >
+                {lastAnswerResult &&
+                  (lastAnswerResult.isCorrect ? (
+                    <FaRegCircle
+                      style={{ color: ct2css("primary") }}
+                      className={styles.correctIcon}
+                    />
                   ) : (
-                    lastAnswerResult.isFinal && (
-                      <p style={{ color: "red" }}>不正解！</p>
-                    )
-                  )}
-                  {lastAnswerResult.isFinal &&
-                    lastAnswerResult.correctAnswer && (
-                      <p>正解は: {lastAnswerResult.correctAnswer}</p>
-                    )}
-                </div>
-              )}
+                    <IoMdClose
+                      style={{ color: ct2css("error") }}
+                      className={styles.correctIcon}
+                    />
+                  ))}
+                {lastAnswerResult && (
+                  <div className={styles.answerResultContainer}>
+                    <div className={styles.answerResultText}>
+                      {lastAnswerResult.isCorrect ? (
+                        <p className={styles.correct}>正解！</p>
+                      ) : (
+                        <p className={styles.uncorrect}>不正解！</p>
+                      )}
+                    </div>
+                    <p className={styles.answerResultAnswer}>
+                      正解は:{" "}
+                      <span className={styles.answeringTextAccent}>
+                        「{lastAnswerResult.correctAnswer}」
+                      </span>
+                    </p>
+                    <p className={styles.answerResultQuestion}>
+                      {currentQuestion.text}
+                    </p>
+                  </div>
+                )}
+              </CommonModal>
 
               {/* 選択肢表示 */}
-              {questionState === "answering" &&
-                activeAnswerPlayerId === playerId &&
-                choices.length > 0 && (
-                  <div className="choices-area">
-                    <p>{answeringTimer}</p>
+              <CommonModal
+                open={
+                  questionState === "answering" &&
+                  activeAnswerPlayerId === playerId &&
+                  choices.length > 0
+                }
+              >
+                <div className={styles.choicesModalContainer}>
+                  <div className={styles.choicesModalTop}>
+                    <p className={styles.choicesModalQuestionText}>
+                      {displayedQuestionText}
+                    </p>
+                    <p className={styles.choicesModalTimer}>
+                      {answeringTimer} s
+                    </p>
+                    <GuageBar weight="10px" ratio={answeringTimer / 5} />
+                  </div>
+                  <div className={styles.choicesContainer}>
                     {choices.map((char, index) => (
                       <button
                         key={index}
                         onClick={() => handleSubmitCharacter(char)}
+                        className={styles.choiceButton}
                       >
                         {char}
                       </button>
                     ))}
                   </div>
-                )}
+                </div>
+              </CommonModal>
             </div>
           )}
 
@@ -420,7 +469,12 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
             {Object.values(playersScores)
               .sort((a, b) => b.score - a.score)
               .map((player, i) => (
-                <div className={styles.playerCardWrapper} key={player.id}>
+                <motion.div
+                  className={styles.playerCardWrapper}
+                  key={player.id}
+                  layoutId={player.id}
+                  layout
+                >
                   <p className={styles.playerRank}>{i + 1}.</p>
                   <PlayerCard
                     playerId={player.id}
@@ -429,7 +483,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
                     isMe={player.id === playerId}
                     className={styles.playerCard}
                   />
-                </div>
+                </motion.div>
 
                 // <li key={player.id}>
                 //   {player.name} {player.id === playerId ? "(おまえ)" : ""}:{" "}

@@ -1,6 +1,9 @@
 import React, { useEffect } from "react";
 import { Socket } from "socket.io-client";
-import { Room } from "../util/types";
+import { Room } from "../../util/types";
+import styles from "./style.module.css";
+import CommonSection from "../CommonSection";
+import PlayerIcon from "../PlayerIcon";
 
 interface RoomWaitingProps {
   socket: Socket | null;
@@ -18,6 +21,8 @@ const RoomWaiting: React.FC<RoomWaitingProps> = ({
   onGameStarted,
 }) => {
   const isHost = room.hostId === playerId;
+  const hostName = room.players?.[room.hostId]?.name || "Unknown";
+  const playerCount = room.players ? Object.keys(room.players).length : 0;
 
   useEffect(() => {
     console.log("[DEBUG_ROOMWAITING] room prop updated:", room);
@@ -80,7 +85,53 @@ const RoomWaiting: React.FC<RoomWaitingProps> = ({
 
   return (
     <div>
-      <h2>Room: {room.id}</h2>
+      <CommonSection bgColor="primary">
+        <div className={styles.topContainer}>
+          <p className={styles.roomID}>ルームID: {room.id}</p>
+          <h1 className={styles.waitingMessage}>
+            {isHost ? "おまえ" : hostName}の開始を待っています...
+          </h1>
+        </div>
+      </CommonSection>
+      <div className={styles.bottomContainer}>
+        <div className={styles.bottomTextContainer}>
+          <p className={styles.playerCount}>プレイヤー({playerCount}人)</p>
+          <div className={styles.playerList}>
+            {room.players &&
+              Object.values(room.players).map((player) => (
+                <div key={player.id} className={styles.playerItem}>
+                  <PlayerIcon palyerId={player.id} size="50px" />
+                  <div className={styles.playerInfo}>
+                    <div className={styles.playerTagContainer}>
+                      {player.id === playerId && (
+                        <p className={styles.playerTag}>{"おまえ"}</p>
+                      )}
+                      {player.id === room.hostId && (
+                        <p className={styles.playerTag}>{"ホスト"}</p>
+                      )}
+                    </div>
+                    <p className={styles.playerName}>{player.name}</p>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+        <div className={styles.bottomButtonContainer}>
+          <button onClick={handleLeaveRoom} className={styles.leaveButton}>
+            退出
+          </button>
+          <button
+            onClick={handleStartGame}
+            className={`${styles.startButton} ${
+              !isHost ? styles.dissableStartButton : ""
+            }`}
+          >
+            開始
+          </button>
+        </div>
+      </div>
+
+      {/* <h2>Room: {room.id}</h2>
       <p>Host: {room.players?.[room.hostId]?.name || "Unknown Host"}</p>
       <p>State: {room.state}</p>
 
@@ -98,7 +149,7 @@ const RoomWaiting: React.FC<RoomWaitingProps> = ({
       {isHost && room.state === "waiting" && (
         <button onClick={handleStartGame}>Start Game</button>
       )}
-      <button onClick={handleLeaveRoom}>Leave Room</button>
+      <button onClick={handleLeaveRoom}>Leave Room</button> */}
     </div>
   );
 };

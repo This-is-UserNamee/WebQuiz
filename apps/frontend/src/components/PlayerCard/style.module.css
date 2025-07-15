@@ -1,0 +1,52 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-m);
+  background-color: var(--bc-card);
+  border-radius: 500px;
+  box-shadow: var(--sh-rg);
+  padding: var(--sp-s);
+}
+
+.iconContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.meBadge {
+  position: absolute;
+  bottom: -10px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  background-color: var(--bc-accent);
+  padding: 0 var(--sp-s);
+  border-radius: var(--rd-l);
+}
+
+.info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-ss);
+  padding-right: var(--sp-m);
+}
+
+.topInfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--sp-m);
+}
+
+.playerName {
+  font-size: 1.2rem;
+}
+
+.playerScore {
+  padding: var(--sp-ss) var(--sp-s);
+  border-radius: var(--rd-l);
+  color: var(--bc-accent);
+  -webkit-text-stroke: 1px var(--bc-text);
+}

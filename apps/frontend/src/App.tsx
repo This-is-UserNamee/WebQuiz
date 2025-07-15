@@ -3,11 +3,11 @@ import { io, Socket } from "socket.io-client";
 import RegisterPlayer from "./components/RegisterPlayer/RegisterPlayer";
 import Lobby from "./components/Loby/Lobby";
 
-import GameScreen from "./components/GameScreen";
 import Result from "./components/Result";
 import { Room } from "./util/types"; // Room 型をインポート
 import "./App.css";
 import RoomWaiting from "./components/RoomWaiting/RoomWaiting";
+import GameScreen from "./components/GameScreen/GameScreen";
 // バックエンドのURLを環境変数から取得
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 

@@ -14,6 +14,7 @@ const PlayerIcon = ({
       style={{
         backgroundImage: `url(https://api.dicebear.com/9.x/thumbs/svg?seed=${palyerId})`,
         width: size || "",
+        height: size || "",
       }}
       className={`${styles.icon} ${className}`}
     ></div>

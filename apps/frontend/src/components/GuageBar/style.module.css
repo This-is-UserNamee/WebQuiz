@@ -1,0 +1,17 @@
+.container {
+  position: relative;
+  border-radius: var(--rd-l);
+  overflow: hidden;
+}
+
+.bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+}
+
+.children {
+  position: relative;
+  z-index: 3;
+}

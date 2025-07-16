@@ -80,7 +80,8 @@ const RegisterPlayer: React.FC<RegisterPlayerProps> = ({
             </div>
             <div className={styles.topBorder} />
             <p className={styles.welcomeText}>
-              ようこそ{`${playerName ? "、 " + playerName : ""}`}！
+              ようこそ
+              {`${playerName ? "、 " + playerName.slice(0, MAX_LENGTH) : ""}`}！
             </p>
           </div>
         </div>

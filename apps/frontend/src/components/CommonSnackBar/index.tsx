@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 
 const CommonSnackBar = ({
   open = false,
-  time = 3000,
+  time,
   onClose,
   children,
 }: {
@@ -21,6 +21,9 @@ const CommonSnackBar = ({
   }, [open]);
 
   useEffect(() => {
+    if (!time) {
+      return () => {};
+    }
     timeoutRef.current = setTimeout(() => {
       setSnackBarVisibility(false);
       onClose?.();

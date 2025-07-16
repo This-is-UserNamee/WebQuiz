@@ -54,9 +54,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
   } | null>(null);
   const [answeringTimer, setAnsweringTimer] = useState<number>(5); // 回答時間の初期値を5秒に設定
 
-  const canBuzz =
-    questionState === "reading" || questionState === "timer_running";
   const [incorrect, setIncorrect] = useState(false);
+  const canBuzz =
+    (questionState === "reading" || questionState === "timer_running") &&
+    !incorrect;
 
   // roomオブジェクトの変更を監視し、questionStateなどを同期
   // フェーズ1: questionStateの同期強化
@@ -408,7 +409,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
               </CommonModal>
               <CommonSnackBar
                 open={incorrect}
-                time={5000}
+                // time={5000}
                 onClose={() => setIncorrect(false)}
               >
                 <p className={styles.incorrectText}>

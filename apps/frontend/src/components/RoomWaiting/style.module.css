@@ -1,0 +1,111 @@
+.topContainer {
+  color: var(--bc-bg);
+  padding: var(--sp-lll) 0;
+}
+
+.roomID {
+  color: var(--bc-secondary);
+  font-size: 1.5rem;
+}
+
+.waitingMessage {
+  font-weight: normal;
+  font-size: 4rem;
+}
+
+.bottomContainer {
+  padding: var(--sp-ll) 0;
+  padding-left: var(--sp-ll);
+  display: flex;
+  background-color: var(--bc-section);
+}
+
+.bottomTextContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+  padding: 0 var(--sp-ll);
+}
+
+.playerCount {
+  font-size: 3rem;
+  color: var(--bc-subtext);
+}
+
+.playerList {
+  flex: 1;
+  padding: var(--sp-l);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  align-content: start;
+  justify-content: start;
+  gap: var(--sp-l);
+  box-shadow: inset var(--sh-ce);
+  border-radius: var(--rd-l);
+}
+
+.playerItem {
+  display: flex;
+  align-items: end;
+  gap: var(--sp-s);
+}
+
+.playerInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.playerTagContainer {
+  display: flex;
+  gap: var(--sp-ss);
+}
+
+.playerTag {
+  display: flex;
+  align-items: center;
+  background-color: var(--bc-subtext);
+  color: var(--bc-bg);
+  padding: 0 var(--sp-s);
+  border-radius: var(--rd-l);
+}
+
+.playerName {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.bottomButtonContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  gap: var(--sp-m);
+}
+
+.leaveButton,
+.startButton {
+  border-radius: var(--rd-l) 0 0 var(--rd-l);
+}
+
+.leaveButton {
+  padding: var(--sp-m) var(--sp-ll);
+  font-size: 3rem;
+  border: 2px solid var(--bc-subtext);
+  border-right: none;
+  color: var(--bc-subtext);
+}
+
+.startButton {
+  font-size: 4rem;
+  padding: var(--sp-lll);
+  padding-right: calc(var(--sp-lll) * 2);
+  background-color: var(--bc-primary);
+  color: var(--bc-bg);
+  box-shadow: var(--sh-bg);
+}
+
+.dissableStartButton {
+  background-color: var(--bc-dissable);
+  box-shadow: none;
+}

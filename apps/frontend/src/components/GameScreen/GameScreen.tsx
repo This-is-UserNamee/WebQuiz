@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Socket } from "socket.io-client";
-import { Room, Question, Player } from "../types";
+import { Room, Question, Player } from "../../util/types";
+import styles from "./style.module.css";
+import CommonSection from "../CommonSection";
+import GuageBar from "../GuageBar";
+import PlayerCard from "../PlayerCard";
+import { div, p } from "motion/react-client";
+import CommonModal from "../CommonModal";
+import { IoMdClose } from "react-icons/io";
+import { ColorType, ct2css } from "../../util/color";
+import { FaRegCircle } from "react-icons/fa";
+import { motion } from "motion/react";
+import { RiVipCrownFill } from "react-icons/ri";
 
 interface GameScreenProps {
   socket: Socket | null;
@@ -41,6 +52,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
     correctAnswer?: string;
   } | null>(null);
   const [answeringTimer, setAnsweringTimer] = useState<number>(5); // 回答時間の初期値を5秒に設定
+
+  const canBuzz =
+    questionState === "reading" || questionState === "timer_running";
 
   // roomオブジェクトの変更を監視し、questionStateなどを同期
   // フェーズ1: questionStateの同期強化
@@ -141,7 +155,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
         // --- フェーズ1以外はコメントアウト ---
         setActiveAnswerPlayerId(null);
         setChoices([]);
-        setTimerRemaining(0);
+        setTimerRemaining(Infinity);
         setLastAnswerResult(null);
         setPlayersScores(payload.room.players);
         // フェーズ1: 新しい問題が来た際に読み上げ関連のstateをリセット
@@ -310,63 +324,246 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
   };
 
   return (
-    <div className="game-screen">
-      <h2>Game in Room: {room.id}</h2>
-      <p>Question State: {questionState}</p>
+    <CommonSection className={styles.section} bgColor="section">
+      {/* <h2>Game in Room: {room.id}</h2>
+      <p>Question State: {questionState}</p> */}
+      <div className={styles.container}>
+        <div className={styles.questionContainer}>
+          {currentQuestion && (
+            <div className="question-area">
+              <GuageBar
+                ratio={
+                  questionState === "timer_running" ||
+                  questionState === "answering" ||
+                  questionState === "result"
+                    ? (timerRemaining - 1000) / (1000 * 10)
+                    : 1
+                }
+              >
+                <h3 className={styles.questionNumber}>
+                  問題 {questionIndex + 1}
+                </h3>
+              </GuageBar>
 
-      {/* プレイヤーとスコアの表示 */}
-      {/* --- フェーズ1以外はコメントアウト --- */}
-      <div className="players-score">
-        <h3>Players:</h3>
-        <ul>
-          {Object.values(playersScores).map((player) => (
-            <li key={player.id}>
-              {player.name} {player.id === playerId ? "(You)" : ""}:{" "}
-              {player.score} points
-            </li>
-          ))}
-        </ul>
+              {/* 回答権表示 */}
+              <CommonModal
+                open={
+                  Boolean(activeAnswerPlayerId) &&
+                  activeAnswerPlayerId !== playerId
+                }
+              >
+                <p className={styles.answeringText}>
+                  <span className={styles.answeringPlayerName}>
+                    {playersScores[activeAnswerPlayerId || ""]?.name ||
+                      "Unknown Player"}{" "}
+                  </span>
+                  が回答権を持っています！！
+                </p>
+              </CommonModal>
+
+              {/* 回答結果表示 */}
+              <CommonModal
+                open={Boolean(
+                  lastAnswerResult &&
+                    lastAnswerResult.isFinal &&
+                    lastAnswerResult.correctAnswer
+                )}
+              >
+                {lastAnswerResult &&
+                  (lastAnswerResult.isCorrect ? (
+                    <FaRegCircle
+                      style={{ color: ct2css("primary") }}
+                      className={styles.correctIcon}
+                    />
+                  ) : (
+                    <IoMdClose
+                      style={{ color: ct2css("error") }}
+                      className={styles.correctIcon}
+                    />
+                  ))}
+                {lastAnswerResult && (
+                  <div className={styles.answerResultContainer}>
+                    <div className={styles.answerResultText}>
+                      {lastAnswerResult.isCorrect ? (
+                        <p className={styles.correct}>正解！</p>
+                      ) : (
+                        <p className={styles.uncorrect}>不正解！</p>
+                      )}
+                    </div>
+                    <p className={styles.answerResultAnswer}>
+                      正解は:{" "}
+                      <span className={styles.answeringTextAccent}>
+                        「{lastAnswerResult.correctAnswer}」
+                      </span>
+                    </p>
+                    <p className={styles.answerResultQuestion}>
+                      {currentQuestion.text}
+                    </p>
+                  </div>
+                )}
+              </CommonModal>
+
+              {/* 選択肢表示 */}
+              <CommonModal
+                open={
+                  questionState === "answering" &&
+                  activeAnswerPlayerId === playerId &&
+                  choices.length > 0
+                }
+              >
+                <div className={styles.choicesModalContainer}>
+                  <div className={styles.choicesModalTop}>
+                    <p className={styles.choicesModalQuestionText}>
+                      {displayedQuestionText}
+                    </p>
+                    <p className={styles.choicesModalTimer}>
+                      {answeringTimer} s
+                    </p>
+                    <GuageBar weight="10px" ratio={answeringTimer / 5} />
+                  </div>
+                  <div className={styles.choicesContainer}>
+                    {choices.map((char, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSubmitCharacter(char)}
+                        className={styles.choiceButton}
+                      >
+                        {char}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </CommonModal>
+            </div>
+          )}
+
+          {/* タイマー表示 */}
+          {/* --- フェーズ1以外はコメントアウト --- */}
+          {/* {questionState === "timer_running" && (
+            <p>Time Remaining: {Math.ceil(timerRemaining / 1000)}s</p>
+          )} */}
+
+          {/* 問題表示エリア */}
+          <div className={styles.questionTextContainer}>
+            {questionState === "presenting" ? (
+              <p className={styles.questionText}></p>
+            ) : (
+              <p className={styles.questionText}>{displayedQuestionText}</p>
+            )}
+          </div>
+
+          {/* 早押しボタン */}
+          <div className={styles.buzzButtonContainer}>
+            <button
+              onClick={handleBuzz}
+              className={`${styles.buzzButton} ${
+                !canBuzz ? styles.buzzButtonDissable : ""
+              }`}
+            >
+              !!
+            </button>
+          </div>
+        </div>
+
+        <div className={styles.playersContainer}>
+          <div className={styles.playersList}>
+            {Object.values(playersScores)
+              .sort((a, b) => b.score - a.score)
+              .map((player, i) => (
+                <motion.div
+                  className={styles.playerCardWrapper}
+                  key={player.id}
+                  layoutId={player.id}
+                  layout
+                >
+                  {i < 3 ? (
+                    <RiVipCrownFill
+                      className={styles.playerRank}
+                      style={{
+                        color: ct2css(["1st", "2nd", "3rd"][i] as ColorType),
+                      }}
+                    />
+                  ) : (
+                    <p className={styles.playerRank}>{i + 1}</p>
+                  )}
+                  <PlayerCard
+                    playerId={player.id}
+                    playerName={player.name}
+                    score={player.score}
+                    isMe={player.id === playerId}
+                    className={styles.playerCard}
+                  />
+                </motion.div>
+
+                // <li key={player.id}>
+                //   {player.name} {player.id === playerId ? "(おまえ)" : ""}:{" "}
+                //   {player.score} points
+                // </li>
+              ))}
+          </div>
+        </div>
       </div>
 
+      {questionState === "presenting" && (
+        <div className={styles.startPopup}>
+          <p className={styles.startPopupNumber}>第{questionIndex + 1}問</p>
+          <p className={styles.startPopupText}>問題！！</p>
+        </div>
+      )}
+
+      {/* --- フェーズ1以外はコメントアウト --- */}
+
       {/* 問題表示エリア */}
-      {currentQuestion && (
+      {/* {currentQuestion && (
         <div className="question-area">
           <h3>Question {questionIndex + 1}:</h3>
-          {/* フェーズ1: questionStateに応じて問題表示を切り替える */}
           {questionState === "presenting" ? (
             <p className="question-text">次の問題が始まります...</p>
           ) : (
             <p className="question-text">{displayedQuestionText}</p>
           )}
         </div>
-      )}
+      )} */}
+
+      {/* プレイヤーとスコアの表示 */}
+      {/* <div className="players-score">
+        <h3>Players:</h3>
+        <ul>
+          {Object.values(playersScores).map((player) => (
+            <li key={player.id}>
+              {player.name} {player.id === playerId ? "(おまえ)" : ""}:{" "}
+              {player.score} points
+            </li>
+          ))}
+        </ul>
+      </div> */}
 
       {/* 早押しボタン */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {(questionState === "reading" || questionState === "timer_running") &&
+      {/* {(questionState === "reading" || questionState === "timer_running") &&
         activeAnswerPlayerId === null && (
           <button onClick={handleBuzz}>早押し！</button>
-        )}
+        )} */}
 
       {/* タイマー表示 */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {questionState === "timer_running" && (
+      {/* {questionState === "timer_running" && (
         <p>Time Remaining: {Math.ceil(timerRemaining / 1000)}s</p>
-      )}
+      )} */}
 
       {/* 回答権表示 */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {activeAnswerPlayerId && (
+      {/* {activeAnswerPlayerId && (
         <p>
           {playersScores[activeAnswerPlayerId]?.name || "Unknown Player"}{" "}
           が回答権を持っています。
           {activeAnswerPlayerId === playerId && <span> (あなたの番です)</span>}
         </p>
-      )}
+      )} */}
 
       {/* 選択肢表示 */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {questionState === "answering" &&
+      {/* {questionState === "answering" &&
         activeAnswerPlayerId === playerId &&
         choices.length > 0 && (
           <div className="choices-area">
@@ -377,27 +574,26 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
               </button>
             ))}
           </div>
-        )}
+        )} */}
 
       {/* 回答結果表示 */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {lastAnswerResult && (
+      {/* {lastAnswerResult && (
         <div className="answer-result">
           {lastAnswerResult.isCorrect ? (
             <p style={{ color: "green" }}>正解！</p>
           ) : (
             lastAnswerResult.isFinal && <p style={{ color: "red" }}>不正解！</p>
-            
           )}
           {lastAnswerResult.isFinal && lastAnswerResult.correctAnswer && (
             <p>正解は: {lastAnswerResult.correctAnswer}</p>
           )}
         </div>
-      )}
+      )} */}
 
       {/* ゲーム終了時の表示 */}
       {/* --- フェーズ1以外はコメントアウト --- */}
-      {room.state === "finished" && (
+      {/* {room.state === "finished" && (
         <div>
           <h3>ゲーム終了！</h3>
           <p>最終スコア:</p>
@@ -411,8 +607,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
               ))}
           </ul>
         </div>
-      )}
-    </div>
+      )} */}
+    </CommonSection>
   );
 };
 

@@ -1,0 +1,14 @@
+.button {
+  position: relative;
+  top: 0;
+  font-size: 2rem;
+  padding: var(--sp-s) var(--sp-ll);
+  border-radius: 500px;
+  box-shadow: var(--sh-bg);
+  transition: box-shadow 0.3s, top 0.3s;
+}
+
+.button:hover {
+  top: 3px;
+  box-shadow: var(--sh-bg-hv);
+}

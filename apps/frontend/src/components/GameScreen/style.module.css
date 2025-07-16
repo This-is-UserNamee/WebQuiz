@@ -167,7 +167,9 @@
 }
 
 .answerResultContainer {
+  position: relative;
   min-width: 30vw;
+  z-index: 2;
 }
 
 .answerResultText {

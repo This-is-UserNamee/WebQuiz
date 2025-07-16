@@ -484,7 +484,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
                       }}
                     />
                   ) : (
-                    <p className={styles.playerRank}>{i + 1}.</p>
+                    <p className={styles.playerRank}>{i + 1}</p>
                   )}
                   <PlayerCard
                     playerId={player.id}

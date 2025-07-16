@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { DetailedHTMLProps, InputHTMLAttributes, useState } from "react";
 import { Socket } from "socket.io-client";
 import styles from "./style.module.css";
 import CommonSection from "../CommonSection";
@@ -16,6 +16,8 @@ const RegisterPlayer: React.FC<RegisterPlayerProps> = ({
 }) => {
   const [playerName, setPlayerName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isComposing, setIsComposing] = useState(false);
+  const MAX_LENGTH = 5; // 最大文字数を5文字に設定
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +47,26 @@ const RegisterPlayer: React.FC<RegisterPlayerProps> = ({
     });
   };
 
+  const handleCompositionStart = () => {
+    setIsComposing(true);
+  };
+
+  const handleCompositionEnd = (
+    e: React.CompositionEvent<HTMLInputElement>
+  ) => {
+    setIsComposing(false);
+    setPlayerName(e.currentTarget.value.slice(0, MAX_LENGTH));
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (isComposing) {
+      setPlayerName(value);
+    } else {
+      setPlayerName(value.slice(0, MAX_LENGTH));
+    }
+  };
+
   return (
     <>
       <CommonSection bgColor="primary">
@@ -66,10 +88,12 @@ const RegisterPlayer: React.FC<RegisterPlayerProps> = ({
         <form onSubmit={handleSubmit} className={styles.inputForm}>
           <input
             type="text"
-            placeholder="ニックネームを入れてね！"
+            placeholder={`${MAX_LENGTH}文字以内のニックネームを入れてね！`}
             value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
+            onChange={handleChange}
             className={styles.input}
+            onCompositionStart={handleCompositionStart}
+            onCompositionEnd={handleCompositionEnd}
           />
           <CommonButton type="submit">登録</CommonButton>
         </form>

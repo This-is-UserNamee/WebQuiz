@@ -16,7 +16,7 @@ const PlayerIcon = ({
         width: size || "",
         height: size || "",
       }}
-      className={`${styles.icon} ${className}`}
+      className={`${styles.icon} ${className || ""}`}
     ></div>
   );
 };

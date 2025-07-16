@@ -50,3 +50,47 @@
   color: var(--bc-accent);
   -webkit-text-stroke: 1px var(--bc-text);
 }
+
+.cardContainer {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-m);
+  padding: var(--sp-l);
+  overflow: hidden;
+  box-shadow: var(--sh-rg);
+  border-radius: var(--rd-l);
+  min-height: 100px;
+  background-color: var(--bc-section);
+}
+
+.cardContainerDummy {
+  background-color: var(--bc-dissable);
+  box-shadow: none;
+  opacity: 0.5;
+}
+
+.carIconContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 100px;
+}
+
+.cardPlayerIcon {
+  position: absolute;
+  width: 200px;
+  right: 0;
+}
+
+.cardInfo {
+  flex: 1;
+  font-size: 2rem;
+  line-height: 1;
+  /* padding-right: var(--sp-ll); */
+}
+
+.cardScore {
+  font-size: 1.5rem;
+  color: var(--bc-accent);
+  -webkit-text-stroke: 1px var(--bc-text);
+}

@@ -8,7 +8,12 @@ export type ColorType =
   | "subtext"
   | "accent"
   | "bg"
-  | "error";
+  | "error"
+  | "1st"
+  | "2nd"
+  | "3rd"
+  | "shadow"
+  | "dissable";
 
 export const ct2css = (color: ColorType) => {
   return `var(--bc-${color})`;

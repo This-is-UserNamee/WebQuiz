@@ -20,6 +20,8 @@ interface GameScreenProps {
   playerId: string;
 }
 
+const ANSWERING_TIME_MAX = 5000; // 回答時間の初期値を5秒に設定
+
 const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
   // GameScreenが受け取ったroomプロップの内容をログに出力して確認
   // このログは、コンポーネントがレンダリングされるたびに実行されます。
@@ -52,7 +54,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
     isFinal: boolean;
     correctAnswer?: string;
   } | null>(null);
-  const [answeringTimer, setAnsweringTimer] = useState<number>(5); // 回答時間の初期値を5秒に設定
+  const [answeringTimer, setAnsweringTimer] =
+    useState<number>(ANSWERING_TIME_MAX); // 回答時間の初期値を5秒に設定
 
   const [incorrect, setIncorrect] = useState(false);
   const canBuzz =
@@ -201,7 +204,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
 
     socket.on("nextChoice", (payload: { choices: string[] }) => {
       setChoices(payload.choices);
-      setAnsweringTimer(5000);
+      setAnsweringTimer(ANSWERING_TIME_MAX);
       console.log("[GameScreen] Next choices:", payload.choices);
     });
 
@@ -297,15 +300,18 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
     }
   }, [questionState, timerRemaining]);
 
+  // 回答中のタイマーのカウントダウン
   useEffect(() => {
     // 回答中でない場合は、answeringTimerのintervalを作成しない
     if (questionState !== "answering" || activeAnswerPlayerId !== playerId) {
       return;
     }
 
+    const TIMER_SPAN = 10;
+
     const timer = setInterval(() => {
       setAnsweringTimer((prev) => {
-        const newTimer = Math.max(0, prev - 1);
+        const newTimer = Math.max(0, prev - TIMER_SPAN);
         if (newTimer === 0 && socket && activeAnswerPlayerId === playerId) {
           console.log("[GameScreen] 自動的に誤答を送信します。");
           socket.emit("submitCharacter", {
@@ -315,7 +321,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
         }
         return newTimer;
       });
-    }, 1000);
+    }, TIMER_SPAN);
     return () => clearInterval(timer);
   }, [socket, activeAnswerPlayerId, playerId, room.id, questionState]);
 
@@ -450,9 +456,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
                       {displayedQuestionText}
                     </p>
                     <p className={styles.choicesModalTimer}>
-                      {answeringTimer} s
+                      {(answeringTimer / 1000).toFixed(2)} s
                     </p>
-                    <GuageBar weight="10px" ratio={answeringTimer / 5} />
+                    <GuageBar
+                      weight="10px"
+                      ratio={answeringTimer / ANSWERING_TIME_MAX}
+                      animate={false}
+                    />
                   </div>
                   <p className={styles.correctChars}>{correctChars}</p>
                   <div className={styles.choicesContainer}>

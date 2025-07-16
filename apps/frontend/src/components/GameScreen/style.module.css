@@ -142,6 +142,7 @@
 .choicesModalTimer {
   text-align: end;
   color: var(--bc-subtext);
+  font-variant-numeric: tabular-nums;
 }
 
 .choicesContainer {

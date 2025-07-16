@@ -1,0 +1,10 @@
+.snackBar {
+  position: fixed;
+  padding: var(--sp-s) var(--sp-l);
+  bottom: var(--sp-l);
+  left: var(--sp-l);
+  background-color: var(--bc-card);
+  border-radius: var(--rd-m);
+  box-shadow: var(--sh-ce);
+  z-index: 500;
+}

@@ -4,6 +4,7 @@ import styles from "./style.module.css";
 import CommonSection from "../CommonSection";
 import Icon from "../Icon";
 import CommonButton from "../CommonButton";
+import CommonSnackBar from "../CommonSnackBar";
 
 interface RegisterPlayerProps {
   socket: Socket | null;
@@ -97,7 +98,17 @@ const RegisterPlayer: React.FC<RegisterPlayerProps> = ({
           />
           <CommonButton type="submit">登録</CommonButton>
         </form>
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {/* {error && <p style={{ color: "red" }}>{error}</p>} */}
+        <CommonSnackBar
+          open={Boolean(error)}
+          time={5000}
+          onClose={() => setError(null)}
+        >
+          <p className={styles.errorText}>
+            うわあ！<span className={styles.errorTextAccent}>ユーザー名</span>
+            を入力してね！
+          </p>
+        </CommonSnackBar>
       </CommonSection>
     </>
   );

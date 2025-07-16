@@ -47,3 +47,9 @@
   border-radius: 5px;
   border: 1px solid var(--bc-primary);
 }
+
+.errorTextAccent {
+  font-size: 1.2rem;
+  color: var(--bc-error);
+  margin: 0 var(--sp-s);
+}

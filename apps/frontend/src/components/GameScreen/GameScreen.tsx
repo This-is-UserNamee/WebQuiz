@@ -59,6 +59,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
     (questionState === "reading" || questionState === "timer_running") &&
     !incorrect;
 
+  const [correctChars, setCorrectChars] = useState<string>("");
+
   // roomオブジェクトの変更を監視し、questionStateなどを同期
   // フェーズ1: questionStateの同期強化
   // room.gameData.questionState, currentQuestion
@@ -165,6 +167,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
         setDisplayedQuestionText(""); // 表示中の問題文をリセット
         setReadingIndex(0); // リセット
         setQuestionIndex(payload.questionIndex);
+        setCorrectChars(""); // 正解文字列をリセット
       }
     );
 
@@ -222,8 +225,17 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
           setIncorrect(false);
         }
         console.log("[GameScreen] Answer result:", payload);
+        setCorrectChars("");
       }
     );
+
+    socket.on("updateCorrectChars", (payload: { correctChars: string }) => {
+      setCorrectChars(payload.correctChars);
+      console.log(
+        "[GameScreen] Correct characters updated:",
+        payload.correctChars
+      );
+    });
 
     socket.on("scoreUpdated", (payload: { players: Player[] }) => {
       const newScores: { [playerId: string]: Player } = {};
@@ -317,6 +329,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
     }
   };
 
+
   const handleSubmitCharacter = (char: string) => {
     if (
       socket &&
@@ -363,6 +376,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
                       "Unknown Player"}{" "}
                   </span>
                   が回答権を持っています！！
+                </p>
+                <p>
+                  {correctChars}
                 </p>
               </CommonModal>
 

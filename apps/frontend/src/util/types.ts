@@ -17,7 +17,7 @@ export interface GameData {
   prePauseState: 'reading' | 'timer_running' | null;
   timerReadyPlayerIds: string[];
   answeredPlayerIds: string[];
-  activeAnswer: { playerId: string; currentAnswerIndex: number; } | null;
+  activeAnswer: { playerId: string; currentAnswerIndex: number; correctChars: string} | null;
   timeoutId: NodeJS.Timeout | null;
   timerStartTime: number;
   remainingTime: number;

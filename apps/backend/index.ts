@@ -31,7 +31,7 @@ interface GameData {
   prePauseState: 'reading' | 'timer_running' | null;
   timerReadyPlayerIds: string[];
   answeredPlayerIds: string[];
-  activeAnswer: { playerId: string; currentAnswerIndex: number; } | null;
+  activeAnswer: { playerId: string; currentAnswerIndex: number; correctChars: string} | null;
   timeoutId: NodeJS.Timeout | null;
   timerStartTime: number;
   remainingTime: number;
@@ -280,7 +280,7 @@ io.on('connection', (socket) => {
 
     // 回答権を付与し、状態を「回答中」に変更
     room.gameData.questionState = 'answering';
-    room.gameData.activeAnswer = { playerId: socket.id, currentAnswerIndex: 0 };
+    room.gameData.activeAnswer = { playerId: socket.id, currentAnswerIndex: 0 , correctChars: ""};
     console.log(`[BUZZ] プレイヤー '${state.players[socket.id].name}' が回答権を獲得。`);
     io.to(roomId).emit('buzzerResult', { winnerId: socket.id, room: room });
 
@@ -317,6 +317,13 @@ io.on('connection', (socket) => {
         room.gameData.currentQuestionIndex++;
         setTimeout(() => startQuestionLifecycle(roomId), 3000);
       } else {
+        // ユーザーが選んだ文字列を他の人に表示できるように、正解した文字列を表示する
+        let correct_Chars = "";
+        for (let i = 0; i < activeAnswer.currentAnswerIndex; i++) {
+          correct_Chars += currentQuestion.answer_data[i].char;
+        }
+        activeAnswer.correctChars = correct_Chars; // 回答権を持つプレイヤーの正解文字列を更新
+        io.to(roomId).emit('updateCorrectChars', { correctChars: activeAnswer.correctChars });
         // 次の文字の選択肢を送信
         const nextChoice = shuffle(currentQuestion.answer_data[activeAnswer.currentAnswerIndex].choices);
         socket.emit('nextChoice', { choices: nextChoice });

@@ -32,7 +32,9 @@ const PlayerCard = ({
           <div className={styles.info}>
             <div className={styles.topInfo}>
               <p className={styles.playerName}>{playerName}</p>
-              <p className={styles.playerScore}>{score}P</p>
+              <p className={styles.playerScore}>
+                <span className={styles.playerScoreNumber}>{score}</span>pt
+              </p>
             </div>
             <GuageBar ratio={score / MAX_SCORE} weight="10px" />
           </div>
@@ -55,7 +57,7 @@ const PlayerCard = ({
                 />
               </div>
               <div className={styles.cardInfo}>
-                <p className={styles.cardScore}>{score}P</p>
+                <p className={styles.cardScore}>{score}pt</p>
                 <p className={styles.cardPlayerName}>{playerName}</p>
               </div>
             </>

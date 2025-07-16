@@ -39,20 +39,24 @@
 
 .topInfo {
   display: flex;
-  align-items: center;
+  align-items: end;
   justify-content: space-between;
   padding: 0 var(--sp-m);
 }
 
 .playerName {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
 }
 
 .playerScore {
-  padding: var(--sp-ss) var(--sp-s);
-  border-radius: var(--rd-l);
+  /* padding: var(--sp-ss) var(--sp-s); */
+  /* border-radius: var(--rd-l); */
   color: var(--bc-accent);
   -webkit-text-stroke: 1px var(--bc-text);
+}
+
+.playerScoreNumber {
+  font-size: 1.3rem;
 }
 
 /* ---カード形式--- */

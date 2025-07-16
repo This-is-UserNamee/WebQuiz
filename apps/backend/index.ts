@@ -217,18 +217,29 @@ io.on('connection', (socket) => {
   socket.on('timerReady', ({ roomId }) => {
     const room = state.rooms[roomId];
     // 読み上げ中でなければ無効
-    if (!room || !room.players[socket.id] || room.gameData.questionState !== 'reading') return;
+    if (!room || !room.players[socket.id] || room.gameData.questionState !== 'reading' || room.gameData.timerReadyPlayerIds.length !== 0) return;
+
     // 準備完了リストに追加
     if (!room.gameData.timerReadyPlayerIds.includes(socket.id)) {
       room.gameData.timerReadyPlayerIds.push(socket.id);
     }
-    // 全員の準備が整ったかチェック
-    const activePlayerCount = Object.keys(room.players).length;
-    if (room.gameData.timerReadyPlayerIds.length === activePlayerCount) {
+
+    //最初のプレイヤーが読み上げ完了した1秒後にタイマーフェーズに移行
+
+    setTimeout(() => {
       room.gameData.questionState = 'timer_running';
       console.log(`[TIMER_READY] 全員準備完了。ルーム [${roomId}] でタイマーフェーズに移行します。`);
       startTimer(roomId, 10000); // 10秒タイマーを開始
-    }
+    }, 500); // 0.5秒後にタイマー開始
+
+
+    // // 全員の準備が整ったかチェック
+    // const activePlayerCount = Object.keys(room.players).length;
+    // if (room.gameData.timerReadyPlayerIds.length === activePlayerCount) {
+    //   room.gameData.questionState = 'timer_running';
+    //   console.log(`[TIMER_READY] 全員準備完了。ルーム [${roomId}] でタイマーフェーズに移行します。`);
+    //   startTimer(roomId, 10000); // 10秒タイマーを開始
+    // }
   });
 
   // --- 早押しイベント ---

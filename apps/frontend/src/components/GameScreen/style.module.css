@@ -150,10 +150,16 @@
 }
 
 .choiceButton {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   font-size: 2rem;
+  width: 5rem;
+  aspect-ratio: 1 / 1;
+  /* height: 4rem; */
   background-color: var(--bc-primary);
   color: var(--bc-bg);
-  padding: var(--sp-m);
+  /* padding: var(--sp-m); */
   border-radius: var(--rd-m);
   box-shadow: var(--sh-ce);
 }

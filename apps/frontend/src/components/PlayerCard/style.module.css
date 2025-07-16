@@ -19,6 +19,10 @@
   position: absolute;
   bottom: -10px;
   font-size: 0.8rem;
+}
+
+.cardMeBadge,
+.meBadge {
   white-space: nowrap;
   background-color: var(--bc-accent);
   padding: 0 var(--sp-s);
@@ -51,22 +55,31 @@
   -webkit-text-stroke: 1px var(--bc-text);
 }
 
+/* ---カード形式--- */
+
 .cardContainer {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--sp-m);
   padding: var(--sp-l);
   overflow: hidden;
-  box-shadow: var(--sh-rg);
+  box-shadow: var(--sh-ce);
   border-radius: var(--rd-l);
   min-height: 100px;
-  background-color: var(--bc-section);
 }
 
 .cardContainerDummy {
   background-color: var(--bc-dissable);
   box-shadow: none;
   opacity: 0.5;
+}
+
+.cardMeBadge {
+  position: absolute;
+  top: var(--sp-m);
+  right: var(--sp-m);
+  font-size: 1.2rem;
 }
 
 .carIconContainer {

@@ -406,7 +406,7 @@ const startQuestionLifecycle = (roomId: string) => {
   const room = state.rooms[roomId];
   if (!room) return;
   const hasPlayerWithHighScor: boolean = Object.values(room.players).some(
-    (player) => player.score >= 10
+    (player) => player.score >= 50
   );
   // 全問題が終了したかチェック
   if (room.gameData.currentQuestionIndex >= room.gameData.questions.length || hasPlayerWithHighScor) {
@@ -424,7 +424,7 @@ const startQuestionLifecycle = (roomId: string) => {
         broadcastRoomList();
         console.log(`[ROOM_RESET] ルーム [${roomId}] が待機状態に戻りました。`);
       }
-    }, 100000000);
+    }, 10000);
     return;
   }
 

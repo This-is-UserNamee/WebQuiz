@@ -39,6 +39,7 @@
 .rank {
   font-size: 2rem;
   color: var(--bc-subtext);
+  padding-left: var(--sp-s);
 }
 
 .winnerContainer {

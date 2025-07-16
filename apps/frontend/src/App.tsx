@@ -123,7 +123,7 @@ function App() {
       ) : currentRoom.state === "playing" ? (
         <GameScreen socket={socket} room={currentRoom} playerId={playerId} />
       ) : (
-        <Result room={currentRoom} />
+        <Result playerId={playerId} room={currentRoom} />
       )}
     </div>
   );

@@ -8,9 +8,10 @@ import PlayerCard from "../PlayerCard";
 import { div, p } from "motion/react-client";
 import CommonModal from "../CommonModal";
 import { IoMdClose } from "react-icons/io";
-import { ct2css } from "../../util/color";
+import { ColorType, ct2css } from "../../util/color";
 import { FaRegCircle } from "react-icons/fa";
 import { motion } from "motion/react";
+import { RiVipCrownFill } from "react-icons/ri";
 
 interface GameScreenProps {
   socket: Socket | null;
@@ -475,7 +476,16 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
                   layoutId={player.id}
                   layout
                 >
-                  <p className={styles.playerRank}>{i + 1}.</p>
+                  {i < 3 ? (
+                    <RiVipCrownFill
+                      className={styles.playerRank}
+                      style={{
+                        color: ct2css(["1st", "2nd", "3rd"][i] as ColorType),
+                      }}
+                    />
+                  ) : (
+                    <p className={styles.playerRank}>{i + 1}.</p>
+                  )}
                   <PlayerCard
                     playerId={player.id}
                     playerName={player.name}

@@ -47,6 +47,7 @@ const PlayerCard = ({
         >
           {!dummy && (
             <>
+              {isMe && <span className={styles.cardMeBadge}>おまえ</span>}
               <div className={styles.carIconContainer}>
                 <PlayerIcon
                   palyerId={playerId}

@@ -5,7 +5,7 @@ import styles from "./style.module.css";
 import { RiVipCrownFill } from "react-icons/ri";
 import { ColorType, ct2css } from "../../util/color";
 
-const Result = ({ room }: { room: Room }) => {
+const Result = ({ playerId, room }: { playerId: string; room: Room }) => {
   let players = Object.values(room.players).sort((a, b) => b.score - a.score);
   players = [
     ...players,
@@ -49,6 +49,7 @@ const Result = ({ room }: { room: Room }) => {
                   className={styles.playerCard}
                   variant="card"
                   dummy={!p?.id}
+                  isMe={p?.id === playerId}
                 />
               </div>
             ))}
@@ -65,6 +66,7 @@ const Result = ({ room }: { room: Room }) => {
                   className={styles.playerCard}
                   variant="card"
                   dummy={!p?.id}
+                  isMe={p?.id === playerId}
                 />
               </div>
             ))}

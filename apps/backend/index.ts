@@ -112,6 +112,17 @@ io.on('connection', (socket) => {
     handlePlayerDisconnect(socket.id);
   });
 
+  // --- ルームリスト要求イベント ---
+  socket.on('requestRoomList', () => {
+    const roomList = Object.values(state.rooms).map(room => ({
+      id: room.id,
+      playerCount: Object.keys(room.players).length,
+      state: room.state
+    }));
+    socket.emit('roomListUpdate', roomList);
+    console.log(`[ROOM_LIST_REQUEST] プレイヤー ${socket.id} にルームリストを送信しました。`);
+  });
+
   // --- プレイヤー登録イベント ---
   socket.on('registerPlayer', ({ playerName }) => {
     // 入力値の検証
@@ -130,6 +141,7 @@ io.on('connection', (socket) => {
       state: room.state
     }));
     socket.emit('roomListUpdate', roomList);
+    console.log("[DEBUG_BACKEND] Sent roomListUpdate to newly registered player:", socket.id, roomList);
   });
 
   // --- ルーム作成イベント ---

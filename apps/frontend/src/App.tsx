@@ -53,6 +53,8 @@ function App() {
       }
     });
 
+    
+
     // roomUpdated イベントを購読し、currentRoom を更新
     newSocket.on("roomUpdated", (payload: any) => {
       if (payload && payload.room) {

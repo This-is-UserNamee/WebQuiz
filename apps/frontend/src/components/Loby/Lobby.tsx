@@ -27,6 +27,9 @@ const Lobby: React.FC<LobbyProps> = ({
   useEffect(() => {
     if (!socket) return;
 
+    // コンポーネントがマウントされたら、ルーム一覧を要求する
+    socket.emit("requestRoomList");
+
     // ルーム一覧の更新イベントを受信
     socket.on("roomListUpdate", (updatedRooms: RoomInfo[]) => {
       setRooms(updatedRooms);

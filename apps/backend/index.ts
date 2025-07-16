@@ -306,6 +306,7 @@ io.on('connection', (socket) => {
       activeAnswer.currentAnswerIndex++;
       if (activeAnswer.currentAnswerIndex === currentQuestion.answer_data.length) {
         // 全問正解 (完答)
+        room.gameData.activeAnswer = null; // ★★★ 即座に回答権を無効化し、連打によるリクエストをガードする
         console.log(`[CORRECT] プレイヤー '${state.players[socket.id].name}' が完答しました。`);
         const correctAnswer = currentQuestion.answer_data.map(d => d.char).join('');
         io.to(roomId).emit('answerResult', { playerId: socket.id, isCorrect: true, isFinal: true, correctAnswer: correctAnswer });

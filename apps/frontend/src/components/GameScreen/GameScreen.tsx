@@ -352,8 +352,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
               <GuageBar
                 ratio={
                   questionState === "timer_running" ||
-                  questionState === "answering" ||
-                  questionState === "result"
+                    questionState === "answering" ||
+                    questionState === "result"
                     ? (timerRemaining - 1000) / (1000 * 10)
                     : 1
                 }
@@ -375,7 +375,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
                     {playersScores[activeAnswerPlayerId || ""]?.name ||
                       "Unknown Player"}{" "}
                   </span>
-                  が回答権を持っています！！
+                  が回答中...
                 </p>
                 <p>
                   {correctChars}
@@ -386,8 +386,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
               <CommonModal
                 open={Boolean(
                   lastAnswerResult &&
-                    lastAnswerResult.isFinal &&
-                    lastAnswerResult.correctAnswer
+                  lastAnswerResult.isFinal &&
+                  lastAnswerResult.correctAnswer
                 )}
               >
                 {lastAnswerResult &&
@@ -490,9 +490,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
           <div className={styles.buzzButtonContainer}>
             <button
               onClick={handleBuzz}
-              className={`${styles.buzzButton} ${
-                !canBuzz ? styles.buzzButtonDissable : ""
-              }`}
+              className={`${styles.buzzButton} ${!canBuzz ? styles.buzzButtonDissable : ""
+                }`}
             >
               !!
             </button>

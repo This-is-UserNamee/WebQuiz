@@ -105,7 +105,7 @@ const RegisterPlayer: React.FC<RegisterPlayerProps> = ({
           onClose={() => setError(null)}
         >
           <p className={styles.errorText}>
-            うわあ！<span className={styles.errorTextAccent}>ユーザー名</span>
+            うわあ！<span className={styles.errorTextAccent}>ニックネーム</span>
             を入力してね！
           </p>
         </CommonSnackBar>

@@ -12,6 +12,7 @@ import { ColorType, ct2css } from "../../util/color";
 import { FaRegCircle } from "react-icons/fa";
 import { motion } from "motion/react";
 import { RiVipCrownFill } from "react-icons/ri";
+import CommonSnackBar from "../CommonSnackBar";
 
 interface GameScreenProps {
   socket: Socket | null;
@@ -55,6 +56,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
 
   const canBuzz =
     questionState === "reading" || questionState === "timer_running";
+  const [incorrect, setIncorrect] = useState(false);
 
   // roomオブジェクトの変更を監視し、questionStateなどを同期
   // フェーズ1: questionStateの同期強化
@@ -210,11 +212,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
         setLastAnswerResult(payload);
         if (!payload.isCorrect && !payload.isFinal) {
           setActiveAnswerPlayerId(null);
+          setIncorrect(playerId === payload.playerId);
         }
         if (payload.isFinal) {
           setQuestionState("result");
           setActiveAnswerPlayerId(null);
           setChoices([]);
+          setIncorrect(false);
         }
         console.log("[GameScreen] Answer result:", payload);
       }
@@ -387,7 +391,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
                       {lastAnswerResult.isCorrect ? (
                         <p className={styles.correct}>正解！</p>
                       ) : (
-                        <p className={styles.uncorrect}>不正解！</p>
+                        <p className={styles.incorrect}>不正解！</p>
                       )}
                     </div>
                     <p className={styles.answerResultAnswer}>
@@ -402,6 +406,19 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
                   </div>
                 )}
               </CommonModal>
+              <CommonSnackBar
+                open={incorrect}
+                time={5000}
+                onClose={() => setIncorrect(false)}
+              >
+                <p className={styles.incorrectText}>
+                  <span className={styles.incorrectTextAccent}>
+                    <IoMdClose className={styles.incorrectTextIcon} />
+                    不正解{" "}
+                  </span>
+                  だよ！
+                </p>
+              </CommonSnackBar>
 
               {/* 選択肢表示 */}
               <CommonModal

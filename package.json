@@ -20,12 +20,5 @@
   "workspaces": [
     "apps/backend",
     "apps/frontend"
-  ],
-  "dependencies": {
-    "cors": "^2.8.5",
-    "nanoid": "^5.1.5",
-    "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1",
-    "socketio": "^1.0.0"
-  }
+  ]
 }

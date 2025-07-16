@@ -1,0 +1,9 @@
+.container {
+  position: relative;
+  padding: var(--sp-l);
+  background-color: var(--bc-bg);
+  border-radius: var(--rd-m);
+  box-shadow: var(--sh-bg);
+  z-index: 1000;
+  overflow: hidden;
+}

@@ -1,0 +1,70 @@
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: var(--rd-m);
+  overflow: hidden;
+  box-shadow: var(--sh-rg);
+  min-width: 350px;
+  min-height: 200px;
+}
+
+.dummyCard {
+  box-shadow: none;
+  background-color: var(--bc-dissable);
+  opacity: 0.2;
+}
+
+.infoContainer {
+  flex: 1;
+  display: flex;
+}
+
+.roomImg {
+  width: 100px;
+  /* aspect-ratio: 1/1; */
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-color: var(--bc-subtext);
+}
+
+.infoTextContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  /* gap: var(--sp-s); */
+}
+
+.roomId,
+.playerCount {
+  padding: var(--sp-ss) var(--sp-l);
+}
+
+.roomId {
+  font-size: 1rem;
+  color: var(--bc-subtext);
+}
+
+.border {
+  height: 1px;
+  background-color: var(--bc-secondary);
+}
+
+.playerCount {
+  font-size: 1rem;
+  color: var(--bc-subtext);
+}
+
+.joinButton {
+  font-size: 1.5rem;
+  text-align: end;
+  padding: var(--sp-s) var(--sp-ll);
+  background-color: var(--bc-primary);
+  color: var(--bc-bg);
+}
+
+.dissableButton {
+  background-color: var(--bc-dissable);
+}

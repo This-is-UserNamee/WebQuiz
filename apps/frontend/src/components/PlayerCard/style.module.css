@@ -1,0 +1,113 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-m);
+  background-color: var(--bc-card);
+  border-radius: 500px;
+  box-shadow: var(--sh-rg);
+  padding: var(--sp-s);
+}
+
+.iconContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.meBadge {
+  position: absolute;
+  bottom: -10px;
+  font-size: 0.8rem;
+}
+
+.cardMeBadge,
+.meBadge {
+  white-space: nowrap;
+  background-color: var(--bc-accent);
+  padding: 0 var(--sp-s);
+  border-radius: var(--rd-l);
+}
+
+.info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-ss);
+  padding-right: var(--sp-m);
+}
+
+.topInfo {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  padding: 0 var(--sp-m);
+}
+
+.playerName {
+  font-size: 1.3rem;
+}
+
+.playerScore {
+  /* padding: var(--sp-ss) var(--sp-s); */
+  /* border-radius: var(--rd-l); */
+  color: var(--bc-accent);
+  -webkit-text-stroke: 1px var(--bc-text);
+}
+
+.playerScoreNumber {
+  font-size: 1.3rem;
+}
+
+/* ---カード形式--- */
+
+.cardContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-m);
+  padding: var(--sp-l);
+  overflow: hidden;
+  box-shadow: var(--sh-ce);
+  border-radius: var(--rd-l);
+  min-height: 100px;
+}
+
+.cardContainerDummy {
+  background-color: var(--bc-dissable);
+  box-shadow: none;
+  opacity: 0.5;
+}
+
+.cardMeBadge {
+  position: absolute;
+  top: var(--sp-m);
+  right: var(--sp-m);
+  font-size: 1.2rem;
+}
+
+.carIconContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 100px;
+}
+
+.cardPlayerIcon {
+  position: absolute;
+  width: 200px;
+  right: 0;
+}
+
+.cardInfo {
+  flex: 1;
+  font-size: 2rem;
+  line-height: 1;
+  /* padding-right: var(--sp-ll); */
+}
+
+.cardScore {
+  font-size: 1.5rem;
+  color: var(--bc-accent);
+  -webkit-text-stroke: 1px var(--bc-text);
+}

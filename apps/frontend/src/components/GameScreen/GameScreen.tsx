@@ -201,7 +201,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
 
     socket.on("nextChoice", (payload: { choices: string[] }) => {
       setChoices(payload.choices);
-      setAnsweringTimer(5);
+      setAnsweringTimer(5000);
       console.log("[GameScreen] Next choices:", payload.choices);
     });
 
@@ -329,7 +329,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
     }
   };
 
-
   const handleSubmitCharacter = (char: string) => {
     if (
       socket &&
@@ -352,8 +351,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
               <GuageBar
                 ratio={
                   questionState === "timer_running" ||
-                    questionState === "answering" ||
-                    questionState === "result"
+                  questionState === "answering" ||
+                  questionState === "result"
                     ? (timerRemaining - 1000) / (1000 * 10)
                     : 1
                 }
@@ -370,24 +369,24 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
                   activeAnswerPlayerId !== playerId
                 }
               >
-                <p className={styles.answeringText}>
-                  <span className={styles.answeringPlayerName}>
-                    {playersScores[activeAnswerPlayerId || ""]?.name ||
-                      "Unknown Player"}{" "}
-                  </span>
-                  が回答中...
-                </p>
-                <p>
-                  {correctChars}
-                </p>
+                <div className={styles.answeringPlayerContainer}>
+                  <p className={styles.answeringText}>
+                    <span className={styles.answeringPlayerName}>
+                      {playersScores[activeAnswerPlayerId || ""]?.name ||
+                        "Unknown Player"}{" "}
+                    </span>
+                    が回答権を持っています！！
+                  </p>
+                  <p className={styles.correctChars}>{correctChars}</p>
+                </div>
               </CommonModal>
 
               {/* 回答結果表示 */}
               <CommonModal
                 open={Boolean(
                   lastAnswerResult &&
-                  lastAnswerResult.isFinal &&
-                  lastAnswerResult.correctAnswer
+                    lastAnswerResult.isFinal &&
+                    lastAnswerResult.correctAnswer
                 )}
               >
                 {lastAnswerResult &&
@@ -455,6 +454,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
                     </p>
                     <GuageBar weight="10px" ratio={answeringTimer / 5} />
                   </div>
+                  <p className={styles.correctChars}>{correctChars}</p>
                   <div className={styles.choicesContainer}>
                     {choices.map((char, index) => (
                       <button
@@ -490,8 +490,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
           <div className={styles.buzzButtonContainer}>
             <button
               onClick={handleBuzz}
-              className={`${styles.buzzButton} ${!canBuzz ? styles.buzzButtonDissable : ""
-                }`}
+              className={`${styles.buzzButton} ${
+                !canBuzz ? styles.buzzButtonDissable : ""
+              }`}
             >
               !!
             </button>

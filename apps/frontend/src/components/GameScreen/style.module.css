@@ -121,6 +121,7 @@
 .choicesModalContainer {
   display: flex;
   flex-direction: column;
+  gap: var(--sp-m);
   justify-content: space-between;
   min-width: 30vw;
   max-width: 700px;
@@ -131,7 +132,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-ss);
-  margin-bottom: var(--sp-ll);
+  /* margin-bottom: var(--sp-ll); */
 }
 
 .choicesModalQuestionText {
@@ -183,6 +184,16 @@
   font-size: 2rem;
 }
 
+.correctChars {
+  --char-size: 1.5rem;
+  font-size: var(--char-size);
+  min-height: var(--char-size);
+  padding: var(--sp-m);
+  background-color: var(--bc-section);
+  box-shadow: inset var(--sh-ce);
+  border-radius: var(--rd-m);
+}
+
 .correct {
   color: var(--bc-primary);
 }
@@ -193,6 +204,12 @@
 
 .answerResultAnswer {
   font-size: 1.5rem;
+}
+
+.answeringPlayerContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
 }
 
 .answeringTextAccent {

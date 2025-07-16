@@ -36,7 +36,7 @@ function App() {
     });
 
     // 受信する全てのSocket.IOイベントをログに出力（デバッグ用）
-    newSocket.onAny((eventName, payload: any, ...args) => {
+    newSocket.onAny((eventName, payload: any) => {
       const expectedEventName = "roomUpdated";
       //こっちのログにはroomUpdatedが表示されるのにroomUpdatadが発火してくれないので、この中で無理やり動かす。
       if (eventName === expectedEventName) {

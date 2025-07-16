@@ -263,7 +263,7 @@ io.on('connection', (socket) => {
 
     // 回答者に最初の選択肢を送信
     const currentQuestion = room.gameData.questions[room.gameData.currentQuestionIndex];
-    const firstChoice = currentQuestion.answer_data[0].choices;
+    const firstChoice = shuffle(currentQuestion.answer_data[0].choices);
     socket.emit('nextChoice', { choices: firstChoice });
   });
 
@@ -294,7 +294,7 @@ io.on('connection', (socket) => {
         setTimeout(() => startQuestionLifecycle(roomId), 3000);
       } else {
         // 次の文字の選択肢を送信
-        const nextChoice = currentQuestion.answer_data[activeAnswer.currentAnswerIndex].choices;
+        const nextChoice = shuffle(currentQuestion.answer_data[activeAnswer.currentAnswerIndex].choices);
         socket.emit('nextChoice', { choices: nextChoice });
       }
     } else {
@@ -479,6 +479,22 @@ const startTimer = (roomId: string, duration: number) => {
     setTimeout(() => startQuestionLifecycle(roomId), 3000);
   }, duration);
 };
+
+function shuffle<T>(array: T[]): T[] {
+  // 1. 元の配列をコピーして、元の配列に影響を与えないようにする
+  const newArray = [...array];
+
+  // 2. 配列の末尾から先頭に向かってループ
+  for (let i = newArray.length - 1; i > 0; i--) {
+    // 3. 0からiまでのランダムなインデックスを生成
+    const j = Math.floor(Math.random() * (i + 1));
+
+    // 4. 要素を交換する (分割代入)
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+
+  return newArray;
+}
 
 // ===================================================================================
 // サーバー起動

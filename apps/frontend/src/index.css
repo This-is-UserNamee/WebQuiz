@@ -26,6 +26,13 @@ body {
   --bc-2nd: #8c8792;
   --bc-3rd: #6d4c41;
 
+  /* グラデーション */
+  --bc-graprimary: linear-gradient(
+    135deg,
+    var(--bc-primary) 0%,
+    var(--bc-secondary) 100%
+  );
+
   --sp-lll: 100px;
   --sp-ll: 50px;
   --sp-l: 30px;

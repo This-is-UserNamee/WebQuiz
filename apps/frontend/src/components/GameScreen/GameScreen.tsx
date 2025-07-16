@@ -5,7 +5,6 @@ import styles from "./style.module.css";
 import CommonSection from "../CommonSection";
 import GuageBar from "../GuageBar";
 import PlayerCard from "../PlayerCard";
-import { div, p } from "motion/react-client";
 import CommonModal from "../CommonModal";
 import { IoMdClose } from "react-icons/io";
 import { ColorType, ct2css } from "../../util/color";

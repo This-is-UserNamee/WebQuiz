@@ -13,7 +13,8 @@ export type ColorType =
   | "2nd"
   | "3rd"
   | "shadow"
-  | "dissable";
+  | "dissable"
+  | "graprimary";
 
 export const ct2css = (color: ColorType) => {
   return `var(--bc-${color})`;

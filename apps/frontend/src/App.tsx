@@ -8,6 +8,7 @@ import "./App.css";
 import RoomWaiting from "./components/RoomWaiting/RoomWaiting";
 import GameScreen from "./components/GameScreen/GameScreen";
 import Result from "./components/Result/Result";
+import MoveBackGround from "./components/MoveBackGround";
 // バックエンドのURLを環境変数から取得
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
@@ -53,7 +54,7 @@ function App() {
       }
     });
 
-    
+
 
     // roomUpdated イベントを購読し、currentRoom を更新
     newSocket.on("roomUpdated", (payload: any) => {
@@ -105,6 +106,7 @@ function App() {
 
   return (
     <div className="App">
+      <MoveBackGround />
       {!playerId ? (
         <RegisterPlayer socket={socket} onRegistered={handlePlayerRegistered} />
       ) : !currentRoom ? (

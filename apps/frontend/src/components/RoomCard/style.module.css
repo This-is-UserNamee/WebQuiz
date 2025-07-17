@@ -8,12 +8,13 @@
   box-shadow: var(--sh-rg);
   min-width: 350px;
   min-height: 200px;
+  background-color: var(--bc-card);
 }
 
 .dummyCard {
   box-shadow: none;
   background-color: var(--bc-dissable);
-  opacity: 0.2;
+  /* opacity: 0.2; */
 }
 
 .infoContainer {

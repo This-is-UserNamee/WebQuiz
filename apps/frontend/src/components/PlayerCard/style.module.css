@@ -71,12 +71,13 @@
   box-shadow: var(--sh-ce);
   border-radius: var(--rd-l);
   min-height: 100px;
+  background-color: var(--bc-card);
 }
 
 .cardContainerDummy {
   background-color: var(--bc-dissable);
   box-shadow: none;
-  opacity: 0.5;
+  /* opacity: 0.5; */
 }
 
 .cardMeBadge {

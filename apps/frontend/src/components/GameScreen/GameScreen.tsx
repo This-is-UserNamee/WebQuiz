@@ -332,7 +332,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
   };
 
   return (
-    <CommonSection className={styles.section} bgColor="section">
+    <CommonSection className={styles.section}>
       {/* <h2>Game in Room: {room.id}</h2>
       <p>Question State: {questionState}</p> */}
       <div className={styles.container}>
@@ -486,13 +486,14 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
 
           {/* 早押しボタン */}
           <motion.div className={styles.buzzButtonContainer}
-            whileHover="hover"
-            whileTap="tap"
           >
             <motion.button
               onClick={handleBuzz}
               className={`${styles.buzzButton} ${!canBuzz ? styles.buzzButtonDissable : ""
                 }`}
+
+              whileHover={{ scale: canBuzz ? 1.05 : 1 }}
+              whileTap={{ scale: canBuzz ? 0.95 : 1 }}
             >
               !!
             </motion.button>

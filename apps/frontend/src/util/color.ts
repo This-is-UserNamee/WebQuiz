@@ -1,5 +1,6 @@
 export type ColorType =
   | "primary"
+  | "primary-dark"
   | "secondary"
   | "card"
   | "section"

@@ -35,6 +35,7 @@
   box-shadow: inset var(--sh-ce);
   padding: var(--sp-ll);
   border-radius: var(--rd-l);
+  background-color: var(--bc-section);
 }
 
 .questionText {

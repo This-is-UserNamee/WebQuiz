@@ -53,10 +53,10 @@ const RoomCard = ({
             </button>
           </>
         )}
-        {!canJoin &&
+        {!canJoin && !dummy &&
           <>
             <div className={styles.dissableBack} />
-            {!dummy && <div className={styles.playingBadge}>プレイ中...</div>}
+            <div className={styles.playingBadge}>プレイ中...</div>
           </>
         }
       </motion.div>

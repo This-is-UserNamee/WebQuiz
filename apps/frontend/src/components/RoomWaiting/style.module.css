@@ -18,7 +18,7 @@
   padding: var(--sp-ll) 0;
   padding-left: var(--sp-ll);
   display: flex;
-  background-color: var(--bc-section);
+  /* background-color: var(--bc-section); */
   overflow-x: hidden;
 }
 
@@ -46,6 +46,7 @@
   gap: var(--sp-l);
   box-shadow: inset var(--sh-ce);
   border-radius: var(--rd-l);
+  background-color: var(--bc-section);
 }
 
 .playerItem {
@@ -116,4 +117,5 @@
 .dissableStartButton {
   background-color: var(--bc-dissable);
   box-shadow: none;
+  animation: none;
 }

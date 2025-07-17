@@ -3,7 +3,7 @@ import { Socket } from "socket.io-client";
 import styles from "./style.module.css";
 import RoomCard from "../RoomCard";
 import { IoAddCircle } from "react-icons/io5";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import CommonSnackBar from "../CommonSnackBar";
 
 interface RoomInfo {

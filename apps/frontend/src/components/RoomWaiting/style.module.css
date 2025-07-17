@@ -14,10 +14,12 @@
 }
 
 .bottomContainer {
+  position: relative;
   padding: var(--sp-ll) 0;
   padding-left: var(--sp-ll);
   display: flex;
   background-color: var(--bc-section);
+  overflow-x: hidden;
 }
 
 .bottomTextContainer {
@@ -85,6 +87,9 @@
 
 .leaveButton,
 .startButton {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-l);
   border-radius: var(--rd-l) 0 0 var(--rd-l);
 }
 

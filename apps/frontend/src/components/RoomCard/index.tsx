@@ -22,6 +22,8 @@ const RoomCard = ({
       <motion.div className={`${styles.card} ${dummy ? styles.dummyCard : ""}`}
         onClick={onClick}
 
+        initial={{ opacity: .2 }}
+        animate={{ opacity: dummy ? "" : 1 }}
         whileHover={canJoin ? { scale: 1.05 } : {}}
         whileTap={canJoin ? { scale: 0.95 } : {}}
       >

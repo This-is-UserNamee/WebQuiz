@@ -1,9 +1,12 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Socket } from "socket.io-client";
 import { Room } from "../../util/types";
 import styles from "./style.module.css";
 import CommonSection from "../CommonSection";
 import PlayerIcon from "../PlayerIcon";
+import { FaAnglesRight } from "react-icons/fa6";
+import { AnimatePresence, motion } from "motion/react";
+import { MdLogout } from "react-icons/md";
 
 interface RoomWaitingProps {
   socket: Socket | null;
@@ -23,6 +26,7 @@ const RoomWaiting: React.FC<RoomWaitingProps> = ({
   const isHost = room.hostId === playerId;
   const hostName = room.players?.[room.hostId]?.name || "Unknown";
   const playerCount = room.players ? Object.keys(room.players).length : 0;
+  const [dot, setDot] = useState("");
 
   useEffect(() => {
     console.log("[DEBUG_ROOMWAITING] room prop updated:", room);
@@ -63,6 +67,14 @@ const RoomWaiting: React.FC<RoomWaitingProps> = ({
     };
   }, [socket, onLeaveRoom, onGameStarted]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDot((prev) => (prev.length < 3 ? prev + "." : ""));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+
   const handleLeaveRoom = () => {
     if (socket) {
       socket.emit("leaveRoom", { roomId: room.id });
@@ -85,49 +97,65 @@ const RoomWaiting: React.FC<RoomWaitingProps> = ({
 
   return (
     <div>
-      <CommonSection bgColor="primary">
+      <CommonSection bgColor="graprimarydark" shadow>
         <div className={styles.topContainer}>
           <p className={styles.roomID}>ルームID: {room.id}</p>
           <h1 className={styles.waitingMessage}>
-            {isHost ? "おまえ" : hostName}の開始を待っています...
+            {isHost ? "おまえ" : hostName}の開始を待っています{dot}
           </h1>
         </div>
       </CommonSection>
       <div className={styles.bottomContainer}>
         <div className={styles.bottomTextContainer}>
           <p className={styles.playerCount}>プレイヤー({playerCount}人)</p>
-          <div className={styles.playerList}>
-            {room.players &&
-              Object.values(room.players).map((player) => (
-                <div key={player.id} className={styles.playerItem}>
-                  <PlayerIcon palyerId={player.id} size="50px" />
-                  <div className={styles.playerInfo}>
-                    <div className={styles.playerTagContainer}>
-                      {player.id === playerId && (
-                        <p className={styles.playerTag}>{"おまえ"}</p>
-                      )}
-                      {player.id === room.hostId && (
-                        <p className={styles.playerTag}>{"ホスト"}</p>
-                      )}
+          <motion.div className={styles.playerList} layout>
+            <AnimatePresence>
+              {room.players &&
+                Object.values(room.players).map((player) => (
+                  <motion.div key={player.id} className={styles.playerItem}
+
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    layoutId={player.id}
+                  >
+                    <PlayerIcon palyerId={player.id} size="50px" />
+                    <div className={styles.playerInfo}>
+                      <div className={styles.playerTagContainer}>
+                        {player.id === playerId && (
+                          <p className={styles.playerTag}>{"おまえ"}</p>
+                        )}
+                        {player.id === room.hostId && (
+                          <p className={styles.playerTag}>{"ホスト"}</p>
+                        )}
+                      </div>
+                      <p className={styles.playerName}>{player.name}</p>
                     </div>
-                    <p className={styles.playerName}>{player.name}</p>
-                  </div>
-                </div>
-              ))}
-          </div>
+                  </motion.div>
+                ))}
+            </AnimatePresence>
+          </motion.div>
         </div>
         <div className={styles.bottomButtonContainer}>
-          <button onClick={handleLeaveRoom} className={styles.leaveButton}>
-            退出
-          </button>
-          <button
-            onClick={handleStartGame}
-            className={`${styles.startButton} ${
-              !isHost ? styles.dissableStartButton : ""
-            }`}
+          <motion.button onClick={handleLeaveRoom} className={styles.leaveButton}
+
+            whileHover={{ x: 10 }}
+            whileTap={{ x: 15 }}
           >
-            開始
-          </button>
+            <p>退出</p>
+            <MdLogout />
+          </motion.button>
+          <motion.button
+            onClick={handleStartGame}
+            className={`${styles.startButton} ${!isHost ? styles.dissableStartButton : ""
+              }`}
+
+            whileHover={{ x: isHost ? 10 : 0 }}
+            whileTap={{ x: isHost ? 15 : 0 }}
+          >
+            <p>開始</p>
+            <FaAnglesRight />
+          </motion.button>
         </div>
       </div>
 

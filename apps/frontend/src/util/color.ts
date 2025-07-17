@@ -14,7 +14,8 @@ export type ColorType =
   | "3rd"
   | "shadow"
   | "dissable"
-  | "graprimary";
+  | "graprimary"
+  | "graprimarydark";
 
 export const ct2css = (color: ColorType) => {
   return `var(--bc-${color})`;

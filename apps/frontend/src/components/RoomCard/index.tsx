@@ -1,4 +1,6 @@
+import { FaAngleRight } from "react-icons/fa";
 import styles from "./style.module.css";
+import { motion } from "motion/react";
 
 const RoomCard = ({
   roomID,
@@ -13,9 +15,16 @@ const RoomCard = ({
   onClick?: () => void;
   dummy?: boolean;
 }) => {
+  const canJoin = state === "waiting" && !dummy;
+
   return (
     <div>
-      <div className={`${styles.card} ${dummy ? styles.dummyCard : ""}`}>
+      <motion.div className={`${styles.card} ${dummy ? styles.dummyCard : ""}`}
+        onClick={onClick}
+
+        whileHover={canJoin ? { scale: 1.05 } : {}}
+        whileTap={canJoin ? { scale: 0.95 } : {}}
+      >
         {!dummy && (
           <>
             <div className={styles.infoContainer}>
@@ -32,17 +41,24 @@ const RoomCard = ({
               </div>
             </div>
             <button
-              className={`${styles.joinButton} ${
-                state !== "waiting" ? styles.dissableButton : ""
-              }`}
+              className={`${styles.joinButton} ${!canJoin ? styles.dissableButton : ""
+                }`}
               onClick={onClick}
             >
-              参加 {">>"}
+              <p className={styles.joinText}>
+                参加 <FaAngleRight />
+              </p>
             </button>
           </>
         )}
-      </div>
-    </div>
+        {!canJoin &&
+          <>
+            <div className={styles.dissableBack} />
+            {!dummy && <div className={styles.playingBadge}>プレイ中...</div>}
+          </>
+        }
+      </motion.div>
+    </div >
   );
 };
 

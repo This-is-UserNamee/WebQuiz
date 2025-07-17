@@ -11,6 +11,7 @@ body {
 :root {
   --bc-primary: #00b8d4;
   --bc-primary-grass: #00b8d47c;
+  --bc-primary-dark: #008195;
   --bc-secondary: #b2ebf2;
   --bc-card: #ffffff;
   --bc-section: #f0fdfd;
@@ -31,6 +32,11 @@ body {
     135deg,
     var(--bc-primary) 0%,
     var(--bc-secondary) 100%
+  );
+  --bc-graprimarydark: linear-gradient(
+    135deg,
+    var(--bc-primary) 0%,
+    var(--bc-primary-dark) 100%
   );
 
   --sp-lll: 100px;

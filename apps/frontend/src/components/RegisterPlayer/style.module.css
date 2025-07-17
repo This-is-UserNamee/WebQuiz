@@ -1,7 +1,7 @@
 .topContainer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: var(--sp-lll);
   padding: var(--sp-lll) 0;
   color: var(--bc-bg);
@@ -12,7 +12,7 @@
 }
 
 .topText {
-  flex: 1;
+  /* flex: 1; */
   display: flex;
   flex-direction: column;
   gap: var(--sp-m);
@@ -21,6 +21,7 @@
 .topTitle {
   line-height: 1;
   font-size: 6rem;
+  padding-right: var(--sp-lll);
 }
 
 .topBorder {

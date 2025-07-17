@@ -70,7 +70,7 @@ const RegisterPlayer: React.FC<RegisterPlayerProps> = ({
 
   return (
     <>
-      <CommonSection bgColor="graprimary" shadow>
+      <CommonSection bgColor="graprimarydark" shadow>
         <div className={styles.topContainer}>
           <Icon color="bg" className={styles.icon} />
           <div className={styles.topText}>

@@ -5,12 +5,20 @@
 
 .createButton {
   position: sticky;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   top: var(--sp-l);
   font-size: 2.5rem;
   padding: 20vh var(--sp-ll);
   background-color: var(--bc-primary);
   color: var(--bc-bg);
   border-radius: 0 var(--rd-l) var(--rd-l) 0;
+  box-shadow: var(--sh-bg);
+}
+
+.createButtonIcon {
+  font-size: 4rem;
 }
 
 .roomList {

@@ -65,6 +65,30 @@
   color: var(--bc-bg);
 }
 
+.joinText {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  gap: var(--sp-s);
+}
+
 .dissableButton {
   background-color: var(--bc-dissable);
+}
+
+.dissableBack {
+  position: absolute;
+  inset: 0;
+  background-color: var(--bc-shadow);
+  backdrop-filter: saturate(0);
+}
+
+.playingBadge {
+  position: absolute;
+  top: var(--sp-s);
+  right: var(--sp-s);
+  z-index: 10;
+  background-color: var(--bc-accent);
+  padding: var(--sp-ss) var(--sp-s);
+  border-radius: var(--rd-l);
 }

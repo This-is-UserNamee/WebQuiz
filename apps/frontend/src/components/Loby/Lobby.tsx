@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Socket } from "socket.io-client";
 import styles from "./style.module.css";
 import RoomCard from "../RoomCard";
+import { IoAddCircle } from "react-icons/io5";
+import { motion } from "motion/react";
+import CommonSnackBar from "../CommonSnackBar";
 
 interface RoomInfo {
   id: string;
@@ -23,6 +26,7 @@ const Lobby: React.FC<LobbyProps> = ({
   onJoinRoom,
 }) => {
   const [rooms, setRooms] = useState<RoomInfo[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!socket) return;
@@ -45,7 +49,8 @@ const Lobby: React.FC<LobbyProps> = ({
     // エラーイベントを受信
     socket.on("errorOccurred", ({ message }) => {
       console.error("Error in Lobby:", message);
-      alert(`Error: ${message}`);
+      setError(message);
+      // alert(`Error: ${message}`);
     });
 
     // コンポーネントアンマウント時にイベントリスナーをクリーンアップ
@@ -74,9 +79,13 @@ const Lobby: React.FC<LobbyProps> = ({
     <div>
       {/* <p>よく来たね、 {playerName}！</p> */}
       <div className={styles.roomContainer}>
-        <button onClick={handleCreateRoom} className={styles.createButton}>
-          ルーム作成
-        </button>
+        <motion.button onClick={handleCreateRoom} className={styles.createButton}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scaleY: 0.95 }}
+        >
+          <IoAddCircle className={styles.createButtonIcon} />
+          <p>ルーム作成</p>
+        </motion.button>
         <div className={styles.roomList}>
           {[
             ...rooms,
@@ -98,6 +107,10 @@ const Lobby: React.FC<LobbyProps> = ({
             }
           })}
         </div>
+
+        <CommonSnackBar time={3000} open={Boolean(error)} onClose={() => setError(null)}>
+          <p>{error}</p>
+        </CommonSnackBar>
       </div>
     </div>
   );

@@ -1,3 +1,37 @@
+.welcomeContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-l);
+  gap: var(--sp-l);
+  background-color: var(--bc-section);
+  margin-bottom: var(--sp-l);
+  box-shadow: inset var(--sh-ce);
+}
+
+.welcomeText {
+  font-size: 2.5rem;
+  color: var(--bc-primary);
+  font-weight: normal;
+}
+
+.playerInfo {
+  position: absolute;
+  right: 0;
+  display: flex;
+  align-items: center;
+  font-size: 1.5rem;
+  padding: var(--sp-m);
+  border-radius: 500px 0 0 500px;
+  background-color: var(--bc-card);
+  box-shadow: var(--sh-ce);
+}
+
+.playerName {
+  padding: 0 var(--sp-m);
+}
+
 .roomContainer {
   display: flex;
   align-items: start;
@@ -29,5 +63,5 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: var(--sp-m);
-  padding: var(--sp-l);
+  padding: 0 var(--sp-l);
 }

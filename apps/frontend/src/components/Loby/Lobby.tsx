@@ -5,6 +5,8 @@ import RoomCard from "../RoomCard";
 import { IoAddCircle } from "react-icons/io5";
 import { AnimatePresence, motion } from "motion/react";
 import CommonSnackBar from "../CommonSnackBar";
+import PlayerIcon from "../PlayerIcon";
+import Rogo from "../Rogo";
 
 interface RoomInfo {
   id: string;
@@ -78,6 +80,18 @@ const Lobby: React.FC<LobbyProps> = ({
   return (
     <div>
       {/* <p>よく来たね、 {playerName}！</p> */}
+      <div className={styles.welcomeContainer}>
+        {/* <h2 className={styles.welcomeText}>よく来たね、{playerName}！</h2> */}
+        <a href="./">
+          <Rogo size="3rem" />
+        </a>
+        <h2 className={styles.welcomeText}>QuizMockへようこそ！</h2>
+        <div className={styles.playerInfo}>
+          <PlayerIcon palyerId={playerId} size="2.5rem" />
+          <div className={styles.playerName}>{playerName}</div>
+        </div>
+      </div>
+
       <div className={styles.roomContainer}>
         <motion.button onClick={handleCreateRoom} className={styles.createButton}
           whileHover={{ scale: 1.05 }}

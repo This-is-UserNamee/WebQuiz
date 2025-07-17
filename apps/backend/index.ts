@@ -215,7 +215,7 @@ io.on('connection', (socket) => {
     }
     room.state = 'playing';
     // 問題リストをシャッフルして設定
-    room.gameData.questions = [...questions].sort(() => Math.random() - 0.5);
+    room.gameData.questions = shuffle([...questions]);
     console.log(`[GAME_START] ルーム [${roomId}] でゲームが開始されました。`);
     io.to(roomId).emit('gameStarted', { room: room });
     broadcastRoomList();

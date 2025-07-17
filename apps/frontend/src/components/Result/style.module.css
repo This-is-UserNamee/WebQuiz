@@ -4,11 +4,33 @@
   min-height: 100vh;
 }
 
+.resultTag {
+  position: fixed;
+  z-index: 500;
+  font-size: 5rem;
+  transform: translate(-50%, -50%);
+  top: 50%;
+  left: 50%;
+  padding: var(--sp-ll) var(--sp-lll);
+  color: var(--bc-bg);
+  border: 1px solid var(--bc-bg);
+  border-radius: var(--rd-l);
+}
+
 .space {
-  background-color: var(--bc-primary);
+  position: relative;
+}
+
+.spaceContent {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  background: var(--bc-graprimarydark);
+  z-index: 100;
 }
 
 .container {
+  position: relative;
   padding: var(--sp-ll);
 }
 

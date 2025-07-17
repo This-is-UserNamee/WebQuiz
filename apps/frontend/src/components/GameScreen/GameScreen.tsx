@@ -9,7 +9,7 @@ import CommonModal from "../CommonModal";
 import { IoMdClose } from "react-icons/io";
 import { ColorType, ct2css } from "../../util/color";
 import { FaRegCircle } from "react-icons/fa";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { RiVipCrownFill } from "react-icons/ri";
 import CommonSnackBar from "../CommonSnackBar";
 
@@ -202,7 +202,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
         setLastAnswerResult(payload);
         if (!payload.isCorrect && !payload.isFinal) {
           setActiveAnswerPlayerId(null);
-          setIncorrect(playerId === payload.playerId);
+          if (playerId === payload.playerId) {
+            setIncorrect(true);
+          }
         }
         if (payload.isFinal) {
           setQuestionState("result");
@@ -450,13 +452,16 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
                   <p className={styles.correctChars}>{correctChars}</p>
                   <div className={styles.choicesContainer}>
                     {choices.map((char, index) => (
-                      <button
+                      <motion.button
                         key={index}
                         onClick={() => handleSubmitCharacter(char)}
                         className={styles.choiceButton}
+
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                       >
                         {char}
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </div>
@@ -480,15 +485,18 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
           </div>
 
           {/* 早押しボタン */}
-          <div className={styles.buzzButtonContainer}>
-            <button
+          <motion.div className={styles.buzzButtonContainer}
+            whileHover="hover"
+            whileTap="tap"
+          >
+            <motion.button
               onClick={handleBuzz}
               className={`${styles.buzzButton} ${!canBuzz ? styles.buzzButtonDissable : ""
                 }`}
             >
               !!
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         </div>
 
         <div className={styles.playersContainer}>
@@ -530,13 +538,26 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
         </div>
       </div>
 
-      {questionState === "presenting" && (
-        <div className={styles.startPopup}>
-          <p className={styles.startPopupNumber}>第{questionIndex + 1}問</p>
-          <p className={styles.startPopupText}>問題！！</p>
-        </div>
-      )}
+      <AnimatePresence>
+        {questionState === "presenting" && (
+          <motion.div className={styles.startPopup}
 
+            initial={{ opacity: 0, }}
+            animate={{ opacity: 1, }}
+            exit={{ opacity: 0, }}
+            transition={{ duration: 0.3 }}
+          >
+            <motion.p className={styles.startPopupNumber}
+              initial={{ y: -40 }}
+              animate={{ y: 0 }}
+            >第{questionIndex + 1}問</motion.p>
+            <motion.p className={styles.startPopupText}
+              initial={{ y: 40 }}
+              animate={{ y: 0 }}
+            >問題！！</motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* --- フェーズ1以外はコメントアウト --- */}
 
       {/* 問題表示エリア */}

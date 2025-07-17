@@ -141,7 +141,6 @@ io.on('connection', (socket) => {
       state: room.state
     }));
     socket.emit('roomListUpdate', roomList);
-    console.log("[DEBUG_BACKEND] Sent roomListUpdate to newly registered player:", socket.id, roomList);
   });
 
   // --- ルーム作成イベント ---
@@ -199,7 +198,6 @@ io.on('connection', (socket) => {
     socket.join(roomId);
     socket.emit('joinedRoom', { room: room, playerId: socket.id });
     io.to(roomId).emit('roomUpdated', { room: room }); // ルーム内の全員に更新を通知
-    console.log(`[DEBUG_BACKEND] Sending roomUpdated for room ${roomId} to clients in room:`, Array.from(io.sockets.adapter.rooms.get(roomId) || []));
     broadcastRoomList();
   });
 
@@ -240,18 +238,9 @@ io.on('connection', (socket) => {
 
     setTimeout(() => {
       room.gameData.questionState = 'timer_running';
-      console.log(`[TIMER_READY] 全員準備完了。ルーム [${roomId}] でタイマーフェーズに移行します。`);
       startTimer(roomId, 10000); // 10秒タイマーを開始
     }, 500); // 0.5秒後にタイマー開始
 
-
-    // // 全員の準備が整ったかチェック
-    // const activePlayerCount = Object.keys(room.players).length;
-    // if (room.gameData.timerReadyPlayerIds.length === activePlayerCount) {
-    //   room.gameData.questionState = 'timer_running';
-    //   console.log(`[TIMER_READY] 全員準備完了。ルーム [${roomId}] でタイマーフェーズに移行します。`);
-    //   startTimer(roomId, 10000); // 10秒タイマーを開始
-    // }
   });
 
   // --- 早押しイベント ---
@@ -267,7 +256,7 @@ io.on('connection', (socket) => {
     // フェーズに応じて中断処理を実行
     if (currentState === 'reading') {
       io.to(roomId).emit('pauseReading', { room: room });
-      console.log(`[PAUSE] ルーム [${roomId}] の読み上げを中断しました。`);
+      //console.log(`[PAUSE] ルーム [${roomId}] の読み上げを中断しました。`);
     } else if (currentState === 'timer_running') {
       if (room.gameData.timeoutId) {
         clearTimeout(room.gameData.timeoutId);
@@ -275,13 +264,13 @@ io.on('connection', (socket) => {
         room.gameData.remainingTime -= timeElapsed;
       }
       io.to(roomId).emit('pauseTimer', { room: room });
-      console.log(`[PAUSE] ルーム [${roomId}] のタイマーを中断しました。`);
+      //console.log(`[PAUSE] ルーム [${roomId}] のタイマーを中断しました。`);
     }
 
     // 回答権を付与し、状態を「回答中」に変更
     room.gameData.questionState = 'answering';
     room.gameData.activeAnswer = { playerId: socket.id, currentAnswerIndex: 0 , correctChars: ""};
-    console.log(`[BUZZ] プレイヤー '${state.players[socket.id].name}' が回答権を獲得。`);
+    console.log(`[BUZZ] プレイヤー '${state.players[socket.id].name}' がルーム'${roomId}'で回答権を獲得。`);
     io.to(roomId).emit('buzzerResult', { winnerId: socket.id, room: room });
 
     // 回答者に最初の選択肢を送信
@@ -307,7 +296,7 @@ io.on('connection', (socket) => {
       if (activeAnswer.currentAnswerIndex === currentQuestion.answer_data.length) {
         // 全問正解 (完答)
         room.gameData.activeAnswer = null; // ★★★ 即座に回答権を無効化し、連打によるリクエストをガードする
-        console.log(`[CORRECT] プレイヤー '${state.players[socket.id].name}' が完答しました。`);
+        console.log(`[CORRECT] プレイヤー '${state.players[socket.id].name}' が完答しました。スコアを10加点します。`);
         const correctAnswer = currentQuestion.answer_data.map(d => d.char).join('');
         io.to(roomId).emit('answerResult', { playerId: socket.id, isCorrect: true, isFinal: true, correctAnswer: correctAnswer });
         // スコア加算と更新通知
@@ -363,10 +352,10 @@ io.on('connection', (socket) => {
       if (prePauseState === 'reading') {
         room.gameData.questionState = 'reading';
         io.to(roomId).emit('resumeReading', { room: room });
-        console.log(`[RESUME] 読み上げを再開します。`);
+        //console.log(`[RESUME] 読み上げを再開します。`);
       } else if (prePauseState === 'timer_running') {
         room.gameData.questionState = 'timer_running';
-        console.log(`[RESUME] タイマーを残り${room.gameData.remainingTime}msで再開します。`);
+        //console.log(`[RESUME] タイマーを残り${room.gameData.remainingTime}msで再開します。`);
         startTimer(roomId, room.gameData.remainingTime);
       }
     }

@@ -68,10 +68,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
   // room.gameData.questionState, currentQuestion
   // をroomオブジェクトの変更に合わせて更新し、UIがバックエンドの状態に追従するようにする。
   useEffect(() => {
-    console.log(
-      "GameScreen: useEffectのたびに実行されて欲しい for room update, room:",
-      room
-    );
 
     // room.gameData が存在することを前提にstateを更新
     // もしroom.gameDataがundefinedの場合でも、?.と||で安全にデフォルト値が設定される
@@ -95,12 +91,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
   // questionStateが'reading'の場合、currentQuestion.textを一文字ずつ表示し、
   // 全て表示し終えたら自動的にtimerReadyイベントをサーバーに送信する。
   useEffect(() => {
-    console.log(
-      "[GameScreen]一文字表示のたびに表示されて欲しいuseEffect for reading animation, questionState:",
-      questionState,
-      "currentQuestion:",
-      currentQuestion
-    );
     let interval: NodeJS.Timeout | undefined;
     const READING_SPEED = 100; // 1文字表示する間隔（ミリ秒）
 
@@ -123,7 +113,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
             if (socket) {
               socket.emit("timerReady", { roomId: room.id });
               console.log(
-                "[GameScreen] 読み上げし終わったら表示されて欲しいReading complete, sent timerReady."
+                "[GameScreen] Reading complete, sent timerReady."
               );
             }
           }
@@ -145,17 +135,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
   useEffect(() => {
     if (!socket) return;
 
-    socket.onAny((eventName, ...args) => {
-      console.log(`イベントを受信しました: ${eventName}`);
-      console.log("ペイロード:", args);
-    });
-
     socket.on(
       "newQuestion",
       (payload: { question: Question; questionIndex: number; room: Room }) => {
         console.log(
-          "[GameScreen] New questionを検知した時に実行されてほしい received:",
-          payload.question
+          "[GameScreen] New question received:"
         );
         setCurrentQuestion(payload.question);
         setQuestionState("presenting");
@@ -178,7 +162,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       // --- フェーズ1以外はコメントアウト ---
       setPlayersScores(payload.room.players);
       console.log(
-        "[GameScreen] 読み上げを開始する時に実行されて欲しいReading started."
+        "[GameScreen] Reading started."
       );
     });
 
@@ -312,7 +296,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
       setAnsweringTimer((prev) => {
         const newTimer = Math.max(0, prev - TIMER_SPAN);
         if (newTimer === 0 && socket && activeAnswerPlayerId === playerId) {
-          console.log("[GameScreen] 自動的に誤答を送信します。");
+          console.log("[GameScreen] Timeout, sent wrong answer");
           socket.emit("submitCharacter", {
             roomId: room.id,
             selectedChar: "-1",
@@ -356,8 +340,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
               <GuageBar
                 ratio={
                   questionState === "timer_running" ||
-                  questionState === "answering" ||
-                  questionState === "result"
+                    questionState === "answering" ||
+                    questionState === "result"
                     ? (timerRemaining - 1000) / (1000 * 10)
                     : 1
                 }
@@ -390,8 +374,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
               <CommonModal
                 open={Boolean(
                   lastAnswerResult &&
-                    lastAnswerResult.isFinal &&
-                    lastAnswerResult.correctAnswer
+                  lastAnswerResult.isFinal &&
+                  lastAnswerResult.correctAnswer
                 )}
               >
                 {lastAnswerResult &&
@@ -499,9 +483,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ socket, room, playerId }) => {
           <div className={styles.buzzButtonContainer}>
             <button
               onClick={handleBuzz}
-              className={`${styles.buzzButton} ${
-                !canBuzz ? styles.buzzButtonDissable : ""
-              }`}
+              className={`${styles.buzzButton} ${!canBuzz ? styles.buzzButtonDissable : ""
+                }`}
             >
               !!
             </button>

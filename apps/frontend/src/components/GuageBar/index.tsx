@@ -29,7 +29,7 @@ const GuageBar = ({
         className={styles.bar}
         animate={animate ? { width } : {}}
         style={{
-          background: ct2css(barColor),
+          backgroundColor: ct2css(barColor),
           width: animate ? "" : width,
         }}
       />

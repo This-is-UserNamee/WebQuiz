@@ -25,8 +25,11 @@
   position: absolute;
   height: 100%;
   width: 100%;
-  background: var(--bc-graprimarydark);
   z-index: 100;
+  background-color: var(--bc-primary);
+  background-image: var(--anime-border-image);
+  background-size: var(--anime-border-sizes);
+  animation: var(--anime-border);
 }
 
 .container {

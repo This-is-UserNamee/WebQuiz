@@ -9,6 +9,7 @@ body {
 }
 
 :root {
+  /* 色 */
   --bc-primary: #00b8d4;
   --bc-primary-grass: #00b8d47c;
   --bc-primary-dark: #008195;
@@ -26,6 +27,7 @@ body {
   --bc-1st: #b6a12d;
   --bc-2nd: #8c8792;
   --bc-3rd: #6d4c41;
+  --bc-border: #ffffff40;
 
   /* グラデーション */
   --bc-graprimary: linear-gradient(
@@ -39,6 +41,7 @@ body {
     var(--bc-primary-dark) 100%
   );
 
+  /* スペース */
   --sp-lll: 100px;
   --sp-ll: 50px;
   --sp-l: 30px;
@@ -49,16 +52,42 @@ body {
   --max-width: 1200px;
   --sp-out: var(--sp-m); /* 外側のスペース */
 
+  /* 影 */
   --sh-rg: 3px 3px 3px var(--bc-shadow);
   --sh-bt: 0px 3px 3px var(--bc-shadow);
   --sh-ce: 0px 0px 10px var(--bc-shadow);
   --sh-bg: 0 4px 20px var(--bc-shadow);
   --sh-bg-hv: 0 4px 20px var(--bc-primary);
 
+  /* 各丸 */
   --rd-s: 0.25rem;
   --rd-m: 0.5rem;
   --rd-l: 1rem;
   --rd-xl: 2rem;
+
+  --anime-border-size: 50px;
+  --anime-border-sizes: var(--anime-border-size) var(--anime-border-size);
+  --anime-border-image: linear-gradient(
+    -45deg,
+    transparent 0%,
+    transparent 25%,
+    var(--bc-border) 25%,
+    var(--bc-border) 50%,
+    transparent 50%,
+    transparent 75%,
+    var(--bc-border) 75%,
+    var(--bc-border) 100%
+  );
+  --anime-border: 2s linear infinite animeBorder;
+}
+
+@keyframes animeBorder {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: var(--anime-border-sizes);
+  }
 }
 
 button {

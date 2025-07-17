@@ -28,10 +28,13 @@ const Result = ({ playerId, room }: { playerId: string; room: Room }) => {
 
 
   const MotionSpace = ({ isRight }: { isRight?: boolean }) => {
+    const commonBorderStyle = "1px solid var(--bc-primary-dark)";
+    const borderStyle = isRight ? { borderLeft: commonBorderStyle } : { borderRight: commonBorderStyle };
+
     return (
       <div className={styles.space}>
         <motion.div className={styles.spaceContent}
-          style={isRight ? { right: "0" } : { left: "0" }}
+          style={{ ...(isRight ? { right: "0" } : { left: "0" }), ...borderStyle }}
           initial={{ width: "50vw" }}
           animate={{ width: "" }}
           transition={{ type: "spring", stiffness: 30, damping: 10, delay: KEY_FRAMES.space }}

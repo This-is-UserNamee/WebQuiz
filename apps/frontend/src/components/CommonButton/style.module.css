@@ -5,6 +5,9 @@
   padding: var(--sp-s) var(--sp-ll);
   border-radius: 500px;
   box-shadow: var(--sh-bg);
+  background-image: var(--anime-border-image);
+  background-size: var(--anime-border-sizes);
+  animation: var(--anime-border);
   transition: box-shadow 0.3s, top 0.3s;
 }
 

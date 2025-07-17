@@ -108,6 +108,9 @@
   background-color: var(--bc-primary);
   color: var(--bc-bg);
   box-shadow: var(--sh-bg);
+  background-image: var(--anime-border-image);
+  background-size: var(--anime-border-sizes);
+  animation: var(--anime-border);
 }
 
 .dissableStartButton {

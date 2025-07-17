@@ -15,6 +15,9 @@
   color: var(--bc-bg);
   border-radius: 0 var(--rd-l) var(--rd-l) 0;
   box-shadow: var(--sh-bg);
+  background-image: var(--anime-border-image);
+  background-size: var(--anime-border-sizes);
+  animation: var(--anime-border);
 }
 
 .createButtonIcon {
